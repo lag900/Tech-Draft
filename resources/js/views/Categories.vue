@@ -92,6 +92,25 @@
           <BaseButton @click="saveCategory" :loading="saving">{{ t('Save Changes', 'حفظ التغييرات') }}</BaseButton>
         </template>
       </BaseModal>
+
+      <AlertModal 
+        :show="alertModal.show" 
+        :title="alertModal.title" 
+        :message="alertModal.message" 
+        :type="alertModal.type" 
+        :isRtl="isRtl" 
+        @close="alertModal.show = false" 
+      />
+
+      <ConfirmModal 
+        :show="showConfirmDelete" 
+        :title="t('Confirm Delete', 'تأكيد الحذف')" 
+        :message="t('Are you sure you want to delete this category?', 'هل أنت متأكد من حذف هذا التصنيف؟')" 
+        confirmVariant="danger" 
+        :isRtl="isRtl" 
+        @cancel="showConfirmDelete = false" 
+        @confirm="handleConfirmDelete" 
+      />
     </div>
   </Layout>
 </template>
@@ -103,10 +122,12 @@ import BaseButton from '../components/UI/BaseButton.vue';
 import BaseInput from '../components/UI/BaseInput.vue';
 import BaseModal from '../components/UI/BaseModal.vue';
 import SearchableSelect from '../components/UI/SearchableSelect.vue';
+import AlertModal from '../components/UI/AlertModal.vue';
+import ConfirmModal from '../components/UI/ConfirmModal.vue';
 import { hasPermission } from '../utils/permissions';
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import axios from 'axios';
+import { ref, reactive, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
@@ -117,6 +138,23 @@ const showModal = ref(false);
 const saving = ref(false);
 const editingCat = ref(null);
 const form = ref({ name: '', description: '', status: 'active' });
+
+const alertModal = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info'
+});
+
+const showAlert = (message, title = '', type = 'info') => {
+  alertModal.message = message;
+  alertModal.title = title || (type === 'error' ? t('Error', 'خطأ') : t('Notification', 'تنبيه'));
+  alertModal.type = type;
+  alertModal.show = true;
+};
+
+const showConfirmDelete = ref(false);
+const catToDelete = ref(null);
 
 const isRtl = computed(() => localStorage.getItem('lang') === 'ar');
 const t = (en, ar) => isRtl.value ? ar : en;
@@ -163,18 +201,27 @@ const saveCategory = async () => {
     closeModal();
     fetchCategories();
   } catch (e) {
-    alert('Error saving category');
+    showAlert(t('Error saving category', 'فشل حفظ التصنيف'), '', 'error');
   } finally {
     saving.value = false;
   }
 };
 
-const deleteCategory = async (id) => {
-  if (!confirm(t('Are you sure?', 'هل أنت متأكد؟'))) return;
-  await axios.delete(`/api/categories/${id}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-  });
-  fetchCategories();
+const deleteCategory = (id) => {
+  catToDelete.value = id;
+  showConfirmDelete.value = true;
+};
+
+const handleConfirmDelete = async () => {
+  if (catToDelete.value) {
+    try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token')}` };
+      await axios.delete(`/api/categories/${catToDelete.value}`, { headers });
+      fetchCategories();
+    } catch (e) {}
+    catToDelete.value = null;
+  }
+  showConfirmDelete.value = false;
 };
 </script>
 

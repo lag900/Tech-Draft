@@ -302,6 +302,16 @@
         </main>
       </div>
     </div>
+
+    <!-- Alert Modal -->
+    <AlertModal 
+      :show="alertModal.show" 
+      :title="alertModal.title" 
+      :message="alertModal.message" 
+      :type="alertModal.type" 
+      :isRtl="isRtl" 
+      @close="alertModal.show = false" 
+    />
   </Layout>
 </template>
 
@@ -310,8 +320,9 @@ import Layout from '../components/Layout.vue';
 import BaseCard from '../components/UI/BaseCard.vue';
 import BaseButton from '../components/UI/BaseButton.vue';
 import MeasurementTable from '../components/MeasurementTable.vue';
+import AlertModal from '../components/UI/AlertModal.vue';
 import { hasPermission } from '../utils/permissions';
-import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, computed, nextTick, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
@@ -339,6 +350,20 @@ const catOpen = ref(false);
 const typeOpen = ref(false);
 const catSearch = ref('');
 const typeSearch = ref('');
+
+const alertModal = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info'
+});
+
+const showAlert = (message, title = '', type = 'info') => {
+  alertModal.message = message;
+  alertModal.title = title || (type === 'error' ? t('Error', 'خطأ') : t('Notification', 'تنبيه'));
+  alertModal.type = type;
+  alertModal.show = true;
+};
 const catDropdownRef = ref(null);
 const typeDropdownRef = ref(null);
 
@@ -474,7 +499,7 @@ const cloneTemplate = () => {
       if (typeof l === 'string') return { name: l, defaultValue: 0, unit: 'cm' };
       return l;
     })));
-    alert(t('Labels copied! Don\'t forget to save.', 'تم نسخ التسميات! لا تنسى الحفظ.'));
+    showAlert(t('Labels copied! Don\'t forget to save.', 'تم نسخ التسميات! لا تنسى الحفظ.'), '', 'info');
   }
 };
 
@@ -491,11 +516,11 @@ const saveTemplate = async () => {
       item_type_id: selectedItemTypeId.value,
       labels: measurements.value
     }, { headers });
-    alert(t('Template saved successfully!', 'تم حفظ النموذج بنجاح!'));
+    showAlert(t('Template saved successfully!', 'تم حفظ النموذج بنجاح!'), '', 'success');
     fetchTemplate();
     fetchAllTemplates();
   } catch (e) {
-    alert(t('Error saving template', 'خطأ في حفظ النموذج'));
+    showAlert(t('Error saving template', 'خطأ في حفظ النموذج'), '', 'error');
   } finally {
     saving.value = false;
   }
@@ -528,9 +553,9 @@ const importTemplate = async (event) => {
       headers: { ...headers, 'Content-Type': 'multipart/form-data' }
     });
     fetchTemplate();
-    alert(t('Import successful!', 'تم الاستيراد بنجاح!'));
+    showAlert(t('Import successful!', 'تم الاستيراد بنجاح!'), '', 'success');
   } catch(e) {
-    alert(t('Import failed', 'فشل الاستيراد'));
+    showAlert(t('Import failed', 'فشل الاستيراد'), '', 'error');
   }
   event.target.value = '';
 };

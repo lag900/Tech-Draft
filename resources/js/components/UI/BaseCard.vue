@@ -32,19 +32,20 @@ defineProps({
   background: white;
   border-radius: 12px;
   border: 1px solid #eef2f6;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  margin: 8px 0;
   transition: all 0.2s ease;
   overflow: visible;
 }
 
 .base-card.hoverable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.04);
+  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.06);
   border-color: #e2e8f0;
 }
 
 .card-header {
-  padding: 1.25rem 1.5rem;
+  padding: 12px;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
@@ -65,7 +66,7 @@ defineProps({
 }
 
 .card-body {
-  padding: 1.5rem;
+  padding: 12px;
 }
 
 .no-padding .card-body {
@@ -78,7 +79,7 @@ defineProps({
 }
 
 .card-footer {
-  padding: 1rem 1.5rem;
+  padding: 12px;
   background: #f8fafc;
   border-top: 1px solid #f1f5f9;
 }

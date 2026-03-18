@@ -166,9 +166,9 @@
                   </button>
                </div>
                
-               <button type="button" class="add-btn-outline mb-1-5" @click="form.size_breakdown.push({ size: '', qty: '' })">
+               <button type="button" class="add-btn-outline mb-1-5" @click="openSizeModal">
                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
-                 {{ t('Add Size Row', 'إضافة سطر مقاس') }}
+                 {{ t('Add Size', 'إضافة مقاس') }}
                </button>
             </div>
 
@@ -369,6 +369,23 @@
            </BaseButton>
         </div>
       </form>
+
+      <!-- Modals -->
+      <AddSizeModal 
+        :show="showSizeModal" 
+        :isRtl="isRtl" 
+        @close="showSizeModal = false" 
+        @add="handleAddSize" 
+      />
+
+      <AlertModal 
+        :show="alertModal.show" 
+        :title="alertModal.title" 
+        :message="alertModal.message" 
+        :type="alertModal.type" 
+        :isRtl="isRtl" 
+        @close="alertModal.show = false" 
+      />
     </div>
   </Layout>
 </template>
@@ -381,12 +398,15 @@ import BaseInput from '../../components/UI/BaseInput.vue';
 import BaseTextarea from '../../components/UI/BaseTextarea.vue';
 import SearchableSelect from '../../components/UI/SearchableSelect.vue';
 import MeasurementTable from '../../components/MeasurementTable.vue';
+import AddSizeModal from '../../components/UI/AddSizeModal.vue';
+import AlertModal from '../../components/UI/AlertModal.vue';
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { hasPermission } from '../../utils/permissions';
 
 const router = useRouter();
+const route = useRoute();
 const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
 const can = (perm) => hasPermission(user.value, perm);
 const categories = ref([]);
@@ -405,6 +425,22 @@ const previews_special = reactive({
    design_back_image: null,
    technical_sketch: null
 });
+
+// Modal State
+const showSizeModal = ref(false);
+const alertModal = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info'
+});
+
+const showAlert = (message, title = '', type = 'info') => {
+  alertModal.message = message;
+  alertModal.title = title || (type === 'error' ? t('Error', 'خطأ') : t('Notification', 'تنبيه'));
+  alertModal.type = type;
+  alertModal.show = true;
+};
 
 const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token')}` };
 
@@ -428,6 +464,15 @@ onMounted(async () => {
     templateSuggestions.value = sugRes.data?.data || sugRes.data || [];
     if (clientRes) {
       clients.value = clientRes.data || [];
+    }
+    
+    // Auto-fill if reorder_id is present
+    if (route.query.reorder_id) {
+       const reorderRes = await axios.get(`/api/orders/${route.query.reorder_id}`, { headers });
+       if (reorderRes.data) {
+          applyTemplate(reorderRes.data);
+          showAlert(t('Template applied from past order.', 'تم تطبيق القالب من الطلب السابق.'), '', 'success');
+       }
     }
   } catch (e) {
     console.error('Failed to load initial data:', e);
@@ -550,13 +595,69 @@ watch(() => form.size_breakdown, (newVal) => {
 }, { deep: true });
 
 const applyTemplate = (order) => {
-  if (order.measurements) {
-     let meas = order.measurements;
+  form.title = order.title || form.title;
+  form.product_code = order.product_code || form.product_code;
+  form.category_id = order.category_id || form.category_id;
+  if (order.client_id && (user.value?.role === 'admin' || user.value?.role === 'manager')) {
+     form.client_id = order.client_id;
+  }
+  
+  if (order.season) {
+     const seasonsArr = order.season.split(',').map(s => s.trim().toLowerCase());
+     form.seasons = seasonOptions.value.filter(opt => seasonsArr.includes(opt.value)).map(opt => opt.value);
+  }
+  
+  const fd = order.fabric_details || order.fabric || {};
+  form.fabric_type = fd.type || order.fabric_code || form.fabric_type;
+  form.fabric_weight = fd.weight || order.fabric_weight || form.fabric_weight;
+  form.texture = fd.texture || form.texture;
+  form.fabric_composition = fd.composition || form.fabric_composition;
+  form.fabric_code = fd.code || form.fabric_code;
+  form.fabric_supplier = fd.supplier || form.fabric_supplier;
+  form.yarn_type = fd.yarn_type || form.yarn_type;
+  form.fabric_structure = fd.structure || form.fabric_structure;
+  
+  const pd = order.production_details || {};
+  form.item_type_id = pd.item_type_id || form.item_type_id;
+  form.fit_id = pd.fit_id || form.fit_id;
+  form.measurement_tolerance = pd.tolerance || form.measurement_tolerance;
+  
+  if (order.colors && Array.isArray(order.colors) && order.colors.length > 0) {
+     form.colors = order.colors.map(c => ({
+        hex: c.hex || c.color_hex || '#000000',
+        name: c.name || c.color_name || '',
+        code: c.pantone || c.color_code || ''
+     }));
+  }
+
+  // Measurements
+  let meas = null;
+  if (order.measurements) meas = order.measurements;
+  else if (pd.measurements) meas = pd.measurements;
+  
+  if (meas) {
      if (typeof meas === 'string') {
        try { meas = JSON.parse(meas); } catch(e){ meas = {}; }
      }
      form.measurements = { ...meas };
   }
+  
+  // Trims & Accessories
+  const trims = order.trims || pd.trims || {};
+  form.zipper_type = pd.zipper_type || order.zipper_type || form.zipper_type;
+  form.button_type = pd.button_type || order.button_type || form.button_type;
+  form.drawcord_type = pd.cord_type || order.drawcord_type || form.drawcord_type;
+  form.rib_type = pd.rib_type || order.rib_type || form.rib_type;
+  form.stitching_type = pd.stitch_type || order.stitching_type || form.stitching_type;
+
+  const pkg = order.packaging || order;
+  form.main_label_type = pd.main_label_type || pkg.main_label_type || form.main_label_type;
+  form.care_label_type = pd.care_label_type || pkg.care_label_type || form.care_label_type;
+  form.size_label_type = pd.size_label_type || pkg.size_label_type || form.size_label_type;
+  form.packaging_type = pd.packaging_type || pkg.packaging_type || form.packaging_type;
+  form.folding_method = pd.folding_method || pkg.folding_method || form.folding_method;
+  form.barcode_required = pkg.barcode_required || form.barcode_required;
+  form.notes = order.notes || form.notes;
 };
 
 const addColor = () => form.colors.push({ hex: '#000000', name: '' });
@@ -589,6 +690,19 @@ const handleAssetUpload = (e, key) => {
    reader.readAsDataURL(file);
 };
 
+const openSizeModal = () => {
+  showSizeModal.value = true;
+};
+
+const handleAddSize = (newSize) => {
+  // If the first row is empty, replace it
+  if (form.size_breakdown.length === 1 && !form.size_breakdown[0].size && !form.size_breakdown[0].qty) {
+    form.size_breakdown[0] = { size: newSize.name, qty: newSize.quantity };
+  } else {
+    form.size_breakdown.push({ size: newSize.name, qty: newSize.quantity });
+  }
+};
+
 const removeImage = (idx) => {
   form.reference_images.splice(idx, 1);
   previews.value.splice(idx, 1);
@@ -596,12 +710,12 @@ const removeImage = (idx) => {
 
 const submitOrder = async () => {
   if (!form.title || !form.seasons.length) {
-    alert(t('Please fill all required fields, including Season.', 'الرجاء ملء جميع الحقول المطلوبة، بما في ذلك الموسم.'));
+    showAlert(t('Please fill all required fields, including Season.', 'الرجاء ملء جميع الحقول المطلوبة، بما في ذلك الموسم.'), '', 'error');
     return;
   }
   
   if (form.quantity <= 0) {
-    alert(t('Please provide quantities in the Size Breakdown table.', 'يرجى تقديم الكميات في جدول توزيع المقاسات.'));
+    showAlert(t('Please provide quantities in the Size Breakdown table.', 'يرجى تقديم الكميات في جدول توزيع المقاسات.'), '', 'error');
     return;
   }
   loading.value = true;
@@ -696,10 +810,10 @@ const submitOrder = async () => {
           Object.assign(errors, Object.fromEntries(
              Object.entries(backendErrors).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value])
           ));
-          alert(t('Please correct the highlighted errors.', 'الرجاء تصحيح الأخطاء الموضحة.'));
+          showAlert(t('Please correct the highlighted errors.', 'الرجاء تصحيح الأخطاء الموضحة.'), '', 'error');
        }
     } else {
-       alert(t('Error submitting order: ' + (e.response?.data?.message || e.message), 'فشل إرسال الطلب: ' + (e.response?.data?.message || e.message)));
+       showAlert(t('Error submitting order: ' + (e.response?.data?.message || e.message), 'فشل إرسال الطلب: ' + (e.response?.data?.message || e.message)), '', 'error');
     }
     console.error('Order submission error:', e.response?.data || e);
   } finally {
@@ -740,7 +854,7 @@ const submitOrder = async () => {
 .del-btn { position: absolute; top: 6px; right: 6px; border: none; background: rgba(255,255,255,0.9); color: #ef4444; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s; }
 
 .form-footer { display: flex; justify-content: center; padding-top: 2rem; }
-.form-section { margin-bottom: 4rem; padding: 24px; border-bottom: 1px solid #f1f5f9; }
+.form-section { margin-bottom: 16px; padding: 12px; border-bottom: 1px solid #f1f5f9; }
 .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem; }
 .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2.5rem; }
 .form-grid-top { display: flex; flex-direction: column; gap: 1rem; }

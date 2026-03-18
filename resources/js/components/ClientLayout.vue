@@ -1,7 +1,7 @@
 <template>
   <div class="client-portal" :class="{ 'rtl': isRtl }">
     <!-- Top Navigation Bar -->
-    <header class="client-navbar">
+    <header class="client-navbar no-print">
       <div class="nav-container">
         <!-- Logo -->
         <div class="nav-brand-group">
@@ -79,7 +79,7 @@
     </main>
 
     <!-- Mobile Bottom Navigation for Client -->
-    <nav class="client-bottom-nav">
+    <nav class="client-bottom-nav no-print">
       <router-link to="/dashboard" class="client-bottom-item">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>{{ t('Dash', 'الرئيسية') }}</span>
@@ -98,7 +98,7 @@
       </router-link>
     </nav>
 
-    <footer class="portal-footer">
+    <footer class="portal-footer no-print">
        <div class="container">
           <p>© 2026 TechDraft Manufacturing Platform. All rights reserved.</p>
        </div>
@@ -111,14 +111,15 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import UserAvatar from './UI/UserAvatar.vue';
+import { useLang } from '../composables/useLang';
+
+const { t, isRtl, toggleLang } = useLang();
 
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
-const isRtl = ref(localStorage.getItem('lang') === 'ar');
 const isDropdownOpen = ref(false);
 const dropdownRef = ref(null);
 
-const t = (en, ar) => isRtl.value ? ar : en;
 
 const breadcrumbLinks = computed(() => {
   const links = [];
@@ -135,11 +136,6 @@ const breadcrumbLinks = computed(() => {
   return links;
 });
 
-const toggleLang = () => {
-  isRtl.value = !isRtl.value;
-  localStorage.setItem('lang', isRtl.value ? 'ar' : 'en');
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
-};
 
 const logout = async () => {
   try {
@@ -158,7 +154,6 @@ const closeDropdown = (e) => {
 };
 
 onMounted(() => {
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
   window.addEventListener('click', closeDropdown);
 });
 
@@ -175,6 +170,13 @@ onUnmounted(() => {
   flex-direction: column;
   font-family: 'Instrument Sans', sans-serif;
   color: #1a3a5f;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .client-portal { display: block !important; background: white !important; }
+  .portal-content { padding: 0 !important; margin: 0 !important; }
+  .portal-container { max-width: none !important; margin: 0 !important; }
 }
 
 /* Navbar */

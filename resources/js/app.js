@@ -3,14 +3,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
 
-// ── Arabic First: set default language before any component mounts ──
-if (!localStorage.getItem('lang')) {
-    localStorage.setItem('lang', 'ar');
-}
-// Apply direction immediately so there's no flash of LTR content
-const lang = localStorage.getItem('lang');
-document.documentElement.dir  = lang === 'ar' ? 'rtl' : 'ltr';
-document.documentElement.lang = lang === 'ar' ? 'ar'  : 'en';
+import { i18n } from './i18n';
 
 const app = createApp(App);
 
@@ -22,4 +15,6 @@ app.config.errorHandler = (err, vm, info) => {
     document.body.appendChild(errDiv);
 };
 
-app.use(router).mount('#app');
+app.use(router);
+app.use(i18n);
+app.mount('#app');

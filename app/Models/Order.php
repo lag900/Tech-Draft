@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Auditable;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class Order extends Model
 {
@@ -24,7 +25,7 @@ class Order extends Model
         'zipper_type', 'button_type', 'cord_type', 'drawcord_type', 'rib_type', 'stitching_type',
         'label_details', 'main_label_type', 'care_label_type', 'size_label_type', 'hangtag_type',
         'packaging_notes', 'packaging_type', 'folding_method', 'barcode_required',
-        'revision_number'
+        'revision_number', 'tech_pack'
     ];
 
     protected $casts = [
@@ -35,7 +36,26 @@ class Order extends Model
         'last_update_date' => 'datetime',
         'reference_images' => 'array',
         'barcode_required' => 'boolean',
+        'tech_pack' => 'array',
     ];
+
+    protected $appends = ['can'];
+
+    public function getCanAttribute()
+    {
+        $user = Auth::user() ?: request()->user();
+        if (!$user) return [];
+
+        $isAdmin = in_array($user->role, ['admin', 'superadmin', 'manager']);
+        $isOwner = $this->created_by === $user->id;
+
+        return [
+            'export' => $isAdmin || $isOwner,
+            'approve' => $isAdmin,
+            'delete' => $isAdmin,
+            'edit' => $isAdmin || ($isOwner && $this->status === 'draft'),
+        ];
+    }
 
     protected static function booted()
     {

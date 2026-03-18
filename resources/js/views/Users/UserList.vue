@@ -144,6 +144,25 @@
             </form>
          </div>
       </div>
+
+      <AlertModal 
+        :show="alertModal.show" 
+        :title="alertModal.title" 
+        :message="alertModal.message" 
+        :type="alertModal.type" 
+        :isRtl="isRtl" 
+        @close="alertModal.show = false" 
+      />
+
+      <ConfirmModal 
+        :show="showConfirmDelete" 
+        :title="t('Confirm Delete', 'تأكيد الحذف')" 
+        :message="t('Are you sure you want to delete this user? This action cannot be undone.', 'هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.')" 
+        confirmVariant="danger" 
+        :isRtl="isRtl" 
+        @cancel="showConfirmDelete = false" 
+        @confirm="handleConfirmDelete" 
+      />
     </div>
   </Layout>
 </template>
@@ -153,8 +172,10 @@ import Layout from '../../components/Layout.vue';
 import BaseCard from '../../components/UI/BaseCard.vue';
 import BaseButton from '../../components/UI/BaseButton.vue';
 import UserAvatar from '../../components/UI/UserAvatar.vue';
+import AlertModal from '../../components/UI/AlertModal.vue';
+import ConfirmModal from '../../components/UI/ConfirmModal.vue';
 import { ROLE_INFO, ROLES, hasPermission } from '../../utils/permissions';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 
@@ -170,6 +191,23 @@ const filterStatus = ref('');
 const showModal = ref(false);
 const editingUser = ref(null);
 const saving = ref(false);
+
+const alertModal = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info'
+});
+
+const showAlert = (message, title = '', type = 'info') => {
+  alertModal.message = message;
+  alertModal.title = title || (type === 'error' ? t('Error', 'خطأ') : t('Notification', 'تنبيه'));
+  alertModal.type = type;
+  alertModal.show = true;
+};
+
+const showConfirmDelete = ref(false);
+const userToDelete = ref(null);
 
 const isRtl = computed(() => localStorage.getItem('lang') === 'ar');
 const t = (en, ar) => isRtl.value ? ar : en;
@@ -242,7 +280,7 @@ const saveUser = async () => {
       await fetchUsers();
       closeModal();
    } catch (e) {
-      alert(t('Error saving user.', 'خطأ في حفظ المستخدم.'));
+      showAlert(t('Error saving user.', 'خطأ في حفظ المستخدم.'), '', 'error');
    } finally {
       saving.value = false;
    }
@@ -257,14 +295,22 @@ const toggleUserStatus = async (user) => {
    } catch (e) {}
 };
 
-const deleteUser = async (user) => {
-   if (!confirm(t('Are you sure you want to delete this user?', 'هل أنت متأكد من حذف هذا المستخدم؟'))) return;
-   try {
-      await axios.delete(`/api/users/${user.id}`, {
-         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-      });
-      fetchUsers();
-   } catch (e) {}
+const deleteUser = (user) => {
+   userToDelete.value = user;
+   showConfirmDelete.value = true;
+};
+
+const handleConfirmDelete = async () => {
+   if (userToDelete.value) {
+      try {
+         await axios.delete(`/api/users/${userToDelete.value.id}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+         });
+         fetchUsers();
+      } catch (e) {}
+      userToDelete.value = null;
+   }
+   showConfirmDelete.value = false;
 };
 </script>
 

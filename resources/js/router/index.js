@@ -70,6 +70,13 @@ const routes = [
         meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_ORDERS },
         props: true
     },
+    {
+        path: '/orders/:id/tech-pack',
+        component: () => import('../views/Orders/TechPackGenerator.vue'),
+        name: 'order-tech-pack',
+        meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_ORDERS },
+        props: true
+    },
 
     { 
         path: '/messages', 

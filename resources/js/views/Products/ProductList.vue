@@ -84,6 +84,16 @@
           <BaseButton @click="saveProduct" :loading="saving">{{ t('Save', 'حفظ') }}</BaseButton>
         </template>
       </BaseModal>
+
+      <ConfirmModal 
+        :show="showConfirmDelete" 
+        :title="t('Confirm Delete', 'تأكيد الحذف')" 
+        :message="t('Are you sure you want to delete this product? This action cannot be undone.', 'هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.')" 
+        confirmVariant="danger" 
+        :isRtl="isRtl" 
+        @cancel="showConfirmDelete = false" 
+        @confirm="handleConfirmDelete" 
+      />
     </div>
   </Layout>
 </template>
@@ -94,6 +104,7 @@ import BaseCard from '../../components/UI/BaseCard.vue';
 import BaseButton from '../../components/UI/BaseButton.vue';
 import BaseModal from '../../components/UI/BaseModal.vue';
 import BaseInput from '../../components/UI/BaseInput.vue';
+import ConfirmModal from '../../components/UI/ConfirmModal.vue';
 import { hasPermission } from '../../utils/permissions';
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
@@ -108,6 +119,27 @@ const loading = ref(true);
 const saving = ref(false);
 const showModal = ref(false);
 const editingProduct = ref(null);
+
+const showConfirmDelete = ref(false);
+const productToDelete = ref(null);
+
+const confirmDelete = (id) => {
+  productToDelete.value = id;
+  showConfirmDelete.value = true;
+};
+
+const handleConfirmDelete = async () => {
+  if (productToDelete.value) {
+    try {
+      await axios.delete(`/api/products/${productToDelete.value}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+      });
+      await fetchProducts();
+    } catch (e) {}
+    productToDelete.value = null;
+  }
+  showConfirmDelete.value = false;
+};
 
 const filters = reactive({
   search: '',
@@ -169,14 +201,8 @@ const saveProduct = async () => {
   saving.value = false;
 };
 
-const deleteProduct = async (id) => {
-  if (!confirm(t('Are you sure?', 'هل أنت متأكد؟'))) return;
-  try {
-    await axios.delete(`/api/products/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    });
-    await fetchProducts();
-  } catch (e) {}
+const deleteProduct = (id) => {
+  confirmDelete(id);
 };
 </script>
 

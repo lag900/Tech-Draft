@@ -23,6 +23,7 @@ class OrderProduction extends Model
         'seam_type',
         'label_type', 'packaging_type', 'carton_quantity', 'factory_notes', 'sewing_sequence',
         'cord_type', 'rib_type', 'top_stitch', 'reinforcement', 'label_position',
+        'size_label_type', 'care_label_type', 'folding_method', 'barcode_required',
     ];
 
     protected $casts = [

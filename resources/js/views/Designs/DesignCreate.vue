@@ -34,6 +34,16 @@
         </form>
       </BaseCard>
     </div>
+
+    <!-- Alert Modal -->
+    <AlertModal 
+      :show="alertModal.show" 
+      :title="alertModal.title" 
+      :message="alertModal.message" 
+      :type="alertModal.type" 
+      :isRtl="isRtl" 
+      @close="alertModal.show = false" 
+    />
   </Layout>
 </template>
 
@@ -43,6 +53,7 @@ import BaseCard from '../../components/UI/BaseCard.vue';
 import BaseInput from '../../components/UI/BaseInput.vue';
 import BaseTextarea from '../../components/UI/BaseTextarea.vue';
 import BaseButton from '../../components/UI/BaseButton.vue';
+import AlertModal from '../../components/UI/AlertModal.vue';
 import { ref, reactive, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
@@ -58,6 +69,20 @@ const can = (perm) => hasPermission(user.value, perm);
 const categories = ref([]);
 const loading = ref(false);
 const file = ref(null);
+
+const alertModal = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info'
+});
+
+const showAlert = (message, title = '', type = 'info') => {
+  alertModal.message = message;
+  alertModal.title = title || (type === 'error' ? t('Error', 'خطأ') : t('Notification', 'تنبيه'));
+  alertModal.type = type;
+  alertModal.show = true;
+};
 
 const form = reactive({
   name: '',
@@ -110,7 +135,7 @@ const submitDesign = async () => {
       });
       router.push('/designs');
    } catch (e) {
-      alert(t('Error creating design', 'خطأ في إنشاء التصميم'));
+      showAlert(t('Error creating design', 'خطأ في إنشاء التصميم'), '', 'error');
    } finally {
       loading.value = false;
    }

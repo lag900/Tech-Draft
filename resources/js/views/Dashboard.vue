@@ -115,14 +115,14 @@
           </div>
         </BaseCard>
 
-        <BaseCard :title="t('Quick Stats', 'إحصائيات سريعة')" :subtitle="t('Order status distribution', 'توزيع حالات الطلبات')" no-padding>
-           <div class="stats-list">
-              <div v-for="(val, key) in statsByStatus" :key="key" class="stat-row">
+        <BaseCard :title="t('Quick Stats', 'إحصائيات سريعة')" :subtitle="t('Order status distribution', 'توزيع حالات الطلبات')" no-padding class="quick-stats-card">
+           <div class="stats-list custom-scrollbar">
+              <div v-for="key in Object.keys(statusMap)" :key="key" class="stat-row">
                  <div class="stat-info">
                     <span class="stat-dot" :class="key"></span>
-                    <span class="stat-name">{{ t(statusMap[key]?.en, statusMap[key]?.ar) }}</span>
+                    <span class="stat-name">{{ t(statusMap[key].en, statusMap[key].ar) }}</span>
                  </div>
-                 <span class="stat-count">{{ val }}</span>
+                 <span class="stat-count">{{ statsByStatus[key] || 0 }}</span>
               </div>
            </div>
            <template #footer>
@@ -592,8 +592,30 @@ onMounted(async () => {
 }
 
 /* === Quick Stats Panel === */
+.quick-stats-card {
+  display: flex;
+  flex-direction: column;
+}
 .stats-list {
   padding: 1.25rem;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .stat-row {
@@ -762,6 +784,11 @@ onMounted(async () => {
   .modern-table td {
     padding: 0.75rem 1rem;
     font-size: 0.8125rem;
+  }
+
+  .stats-list {
+    max-height: none;
+    overflow-y: visible;
   }
 
   .kpi-value {

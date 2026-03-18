@@ -74,8 +74,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/export', [OrderController::class, 'export'])->middleware('permission:orders.export');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->middleware('permission:orders.view');
     Route::patch('/orders/{order}', [OrderController::class, 'update'])->middleware('permission:orders.edit');
+    Route::get('/orders/{order}/tech-pack', [OrderController::class, 'getTechPack'])->middleware('permission:orders.view');
+    Route::post('/orders/{order}/tech-pack', [OrderController::class, 'saveTechPack'])->middleware('permission:orders.edit');
+    Route::put('/orders/{order}/tech-pack', [OrderController::class, 'saveTechPack'])->middleware('permission:orders.edit');
     Route::post('/orders/{order}/production', [\App\Http\Controllers\OrderProductionController::class, 'store'])->middleware('permission:orders.edit');
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->middleware('permission:orders.approve');
+    Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->middleware('permission:orders.delete');
 
     // ── Messages ──
     Route::get('/orders/{orderId}/messages', [MessageController::class, 'index'])->middleware('permission:orders.view');

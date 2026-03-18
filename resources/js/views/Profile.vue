@@ -81,6 +81,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Alert Modal -->
+    <AlertModal 
+      :show="alertModal.show" 
+      :title="alertModal.title" 
+      :message="alertModal.message" 
+      :type="alertModal.type" 
+      :isRtl="isRtl" 
+      @close="alertModal.show = false" 
+    />
   </Layout>
 </template>
 
@@ -90,6 +100,7 @@ import BaseCard from '../components/UI/BaseCard.vue';
 import BaseButton from '../components/UI/BaseButton.vue';
 import BaseInput from '../components/UI/BaseInput.vue';
 import UserAvatar from '../components/UI/UserAvatar.vue';
+import AlertModal from '../components/UI/AlertModal.vue';
 import { ref, reactive, computed, onMounted } from 'vue';
 import axios from 'axios';
 
@@ -101,6 +112,20 @@ const loading = ref(false);
 const passLoading = ref(false);
 const avatarPreview = ref(null);
 const avatarFile = ref(null);
+
+const alertModal = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info'
+});
+
+const showAlert = (message, title = '', type = 'info') => {
+  alertModal.message = message;
+  alertModal.title = title || (type === 'error' ? t('Error', 'خطأ') : t('Notification', 'تنبيه'));
+  alertModal.type = type;
+  alertModal.show = true;
+};
 
 const handleAvatarChange = (e) => {
   const file = e.target.files[0];
@@ -163,10 +188,11 @@ const saveProfile = async () => {
     avatarFile.value = null;
     avatarPreview.value = null;
 
-    alert(t('Profile updated successfully!', 'تم تحديث الملف الشخصي بنجاح!'));
+
+    showAlert(t('Profile updated successfully!', 'تم تحديث الملف الشخصي بنجاح!'), '', 'success');
   } catch (e) {
     console.error(e);
-    alert(t('Failed to update profile.', 'فشل تحديث الملف الشخصي.'));
+    showAlert(t('Failed to update profile.', 'فشل تحديث الملف الشخصي.'), '', 'error');
   }
   loading.value = false;
 };
@@ -181,9 +207,9 @@ const changePassword = async () => {
     passForm.current_password = '';
     passForm.new_password = '';
     passForm.new_password_confirmation = '';
-    alert(t('Password updated successfully!', 'تم تحديث كلمة المرور بنجاح!'));
+    showAlert(t('Password updated successfully!', 'تم تحديث كلمة المرور بنجاح!'), '', 'success');
   } catch (e) {
-    alert(t('Failed to update password. Check your current password.', 'فشل تحديث كلمة المرور. تأكد من كلمة المرور الحالية.'));
+    showAlert(t('Failed to update password. Check your current password.', 'فشل تحديث كلمة المرور. تأكد من كلمة المرور الحالية.'), '', 'error');
   }
   passLoading.value = false;
 };

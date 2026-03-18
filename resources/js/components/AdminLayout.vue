@@ -3,7 +3,7 @@
     <!-- Mobile Overlay Backdrop -->
     <div class="mobile-overlay" v-if="isMobileSidebarOpen" @click="isMobileSidebarOpen = false"></div>
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar no-print">
       <div class="sidebar-header">
         <router-link to="/" class="logo">
           <div class="logo-box-img">
@@ -130,7 +130,7 @@
 
     <!-- Main Content -->
     <main class="main-body">
-      <header class="top-nav">
+      <header class="top-nav no-print">
         <div class="top-nav-left">
           <!-- Mobile Hamburger Button -->
           <button class="hamburger-btn" @click="isMobileSidebarOpen = !isMobileSidebarOpen">
@@ -219,9 +219,12 @@ import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import UserAvatar from './UI/UserAvatar.vue';
 import { hasPermission } from '../utils/permissions';
+import { useLang } from '../composables/useLang';
 
+const { t, isRtl, toggleLang } = useLang();
 const router = useRouter();
 const route = useRoute();
+
 const getUser = () => {
   try {
     return JSON.parse(localStorage.getItem('user') || 'null');
@@ -230,7 +233,6 @@ const getUser = () => {
   }
 };
 const user = ref(getUser());
-const isRtl = ref(localStorage.getItem('lang') === 'ar');
 const isCollapsed = ref(localStorage.getItem('sidebar-collapsed') === 'true');
 const isUserDropdownOpen = ref(false);
 const isNotificationsOpen = ref(false);
@@ -243,9 +245,6 @@ watch(() => route.path, () => {
 });
 
 
-function t(en, ar) {
-  return isRtl.value ? ar : en;
-}
 
 const routeName = computed(() => {
   const name = route.name || route.path.split('/').pop() || 'Dashboard';
@@ -282,11 +281,6 @@ watch(isCollapsed, (val) => {
   localStorage.setItem('sidebar-collapsed', val);
 });
 
-const toggleLang = () => {
-  isRtl.value = !isRtl.value;
-  localStorage.setItem('lang', isRtl.value ? 'ar' : 'en');
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
-};
 
 const logout = async () => {
   try {
@@ -304,7 +298,6 @@ const closeDropdowns = (e) => {
 };
 
 onMounted(() => {
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
   window.addEventListener('click', closeDropdowns);
 });
 
@@ -340,6 +333,15 @@ onUnmounted(() => {
 .logout-link { width: 100%; display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; color: #f87171; background: none; border: none; cursor: pointer; border-radius: 10px; font-weight: 700; }
 .logout-link:hover { background: #fff1f2; }
 .main-body { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-x: hidden; }
+
+@media print {
+  .no-print { display: none !important; }
+  .layout { display: block !important; background: white !important; }
+  .main-body { display: block !important; padding: 0 !important; margin: 0 !important; }
+  .page-content { padding: 0 !important; margin: 0 !important; }
+  .page-container { max-width: none !important; margin: 0 !important; }
+}
+
 .top-nav {
   height: 64px;
   background: white;

@@ -1,474 +1,507 @@
 <template>
   <Layout>
+  <div class="full-page-wrapper">
     <div v-if="order" class="order-detail-view" :class="{ 'rtl': isRtl }">
-      <!-- Breadcrumbs -->
-      <div class="breadcrumb-mini no-print">
-        <router-link to="/orders">{{ t('Orders', 'الطلبات') }}</router-link>
-        <span class="sep">/</span>
-        <span class="active">{{ order.order_code }}</span>
-      </div>
+      <!-- Header Area -->
+      <div class="page-top-header">
+        <div class="header-left">
+          <div class="breadcrumb-mini no-print">
+            <router-link to="/orders" class="back-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5m7 7l-7-7 7-7"/></svg>
+            </router-link>
+            <span class="active-code">#{{ order.order_code }}</span>
+          </div>
+          <h1 class="mobile-only-title">{{ order.title || order.category?.name }}</h1>
+        </div>
 
-      <!-- 1. Product Preview Card -->
-      <BaseCard class="product-preview-card no-print">
-        <div class="preview-flex">
-          <div class="preview-img">
-            <img :src="order.design_front_image ? '/storage/' + order.design_front_image : '/images/product-placeholder.png'" 
-                 alt="product"
-                 @error="(e) => e.target.src = '/images/product-placeholder.png'"
-            >
-          </div>
-          <div class="preview-info">
-            <h1 class="preview-title">{{ order.title || order.category?.name || t('Untitled Product', 'منتج بدون اسم') }}</h1>
-            <div class="preview-meta-grid">
-              <div class="p-meta">
-                <span class="p-label">{{ t('Order Code', 'كود الطلب') }}</span>
-                <span class="p-val">#{{ order.order_code }}</span>
-              </div>
-              <div class="p-meta">
-                <span class="p-label">{{ t('Client', 'العميل') }}</span>
-                <span class="p-val">{{ order.client?.brand_name || order.creator?.name }}</span>
-              </div>
-              <div class="p-meta">
-                <span class="p-label">{{ t('Quantity', 'الكمية') }}</span>
-                <span class="p-val">{{ order.production_details?.quantity || '---' }}</span>
-              </div>
-              <div class="p-meta">
-                <span class="p-label">{{ t('Season', 'الموسم') }}</span>
-                <span class="p-val">{{ t(order.season, seasonsAr[order.season]) }} {{ order.year }}</span>
-              </div>
-            </div>
-            <div class="preview-status-row">
-              <span class="status-pill-large" :class="order.status">
-                 {{ t(statusMap[order.status]?.en, statusMap[order.status]?.ar) }}
-              </span>
-              <BaseButton v-if="can('orders.approve')" variant="ghost" size="sm" @click="showStatusModal = true">
-                {{ t('Update Status', 'تحديث الحالة') }}
-              </BaseButton>
-            </div>
-          </div>
-          <div class="preview-actions">
-            <BaseButton v-if="['admin', 'superadmin', 'manager'].includes(currentUser?.role)" variant="primary" @click="scrollToAdminSection">
+        <div class="actions-right no-print">
+            <BaseButton v-if="order.can?.export" class="tech-pack-top-btn" @click="router.push(`/orders/${order.id}/tech-pack`)">
+              <template #icon-left>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </template>
+              {{ t('Professional Tech Pack', 'الملف الفني الاحترافي') }}
+            </BaseButton>
+            
+            <BaseButton v-if="isAdmin && !isEditing" class="btn-gradient" @click="isEditing = true">
               <template #icon-left>
                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               </template>
-              {{ t('Fill Production Specs', 'تعبئة مواصفات الإنتاج') }}
+              {{ t('Edit Order', 'تعديل الطلب') }}
             </BaseButton>
-
-          </div>
+            <div v-else-if="isAdmin && isEditing" class="editing-actions">
+                <BaseButton class="btn-gradient-success" @click="saveTechPackData" :loading="isSavingAdminData">
+                   <template #icon-left><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></template>
+                   {{ t('Save', 'حفظ') }}
+                </BaseButton>
+                <BaseButton variant="white" @click="isEditing = false" :disabled="isSavingAdminData">
+                   {{ t('Cancel', 'إلغاء') }}
+                </BaseButton>
+            </div>
+<BaseButton variant="outline" @click="router.push(`/orders/create?reorder_id=${order.id}`)">
+              <template #icon-left>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </template>
+              {{ t('Reorder', 'إعادة طلب') }}
+            </BaseButton>
         </div>
-      </BaseCard>
-
-      <!-- 2. Mobile Tabs Navigation -->
-      <div class="mobile-tabs-nav no-print">
-        <button 
-          :class="{ active: activeTab === 'production' }" 
-          @click="setTab('production')"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><path d="m17 7-5-5-5 5M17 17l-5 5-5-5"/></svg>
-          {{ t('Production', 'الإنتاج') }}
-        </button>
-        <button 
-          :class="{ active: activeTab === 'client' }" 
-          @click="setTab('client')"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-          {{ t('Specs', 'المواصفات') }}
-        </button>
-        <button 
-          :class="{ active: activeTab === 'chat' }" 
-          @click="setTab('chat')"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          {{ t('Messages', 'المراسلات') }}
-        </button>
       </div>
 
-      <div class="detail-grid">
-        <div class="detail-main">
-          <!-- ====== SECTION 1: CLIENT SPECIFICATIONS ====== -->
-          <div v-if="activeTab === 'client' || !isMobile" class="workflow-section">
-            <h2 class="workflow-title">{{ t('CLIENT SPECIFICATIONS', 'مواصفات العميل') }}</h2>
-            
-            <BaseCard class="info-card read-only-card" :title="t('Technical Specifications', 'المواصفات الفنية')">
-              <div class="spec-list">
-                <!-- Group 1 -->
-                <div class="spec-row">
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Item Category', 'تصنيف القطعة') }}</span>
-                    <span class="spec-value">{{ order.category?.name || '---' }}</span>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Item Type', 'نوع القطعة') }}</span>
-                    <span class="spec-value">{{ order.production_details?.item_type || '---' }}</span>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Fit / Style', 'القصة / الستايل') }}</span>
-                     <span class="spec-value">{{ order.production_details?.fit || t('Regular', 'عادي') }}</span>
-                  </div>
-                </div>
-                <div class="divider"></div>
-                <!-- Group 2 -->
-                <div class="spec-row">
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Fabric Type', 'نوع القماش') }}</span>
-                    <span class="spec-value">{{ order.fabric_details?.type || '---' }}</span>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Fabric Weight', 'وزن القماش') }}</span>
-                    <span class="spec-value">{{ order.fabric_details?.weight ? order.fabric_details.weight + ' gsm' : '---' }}</span>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Composition', 'التكوين') }}</span>
-                     <span class="spec-value">{{ order.fabric_details?.composition || t('Standard', 'قياسي') }}</span>
-                  </div>
-                </div>
-                <div class="divider"></div>
-                <!-- Group 3 -->
-                <div class="spec-row">
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Total Quantity', 'إجمالي الكمية') }}</span>
-                    <span class="spec-value">{{ order.production_details?.quantity || '---' }}</span>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Sizes', 'المقاسات') }}</span>
-                    <span class="spec-value">{{ formatSizes(order.production_details?.sizes) }}</span>
-                  </div>
-                  <div class="spec-item">
-                    <span class="spec-label">{{ t('Season / Year', 'الموسم / السنة') }}</span>
-                    <span class="spec-value">{{ t(order.season, seasonsAr[order.season]) }} {{ order.year }}</span>
-                  </div>
-                </div>
-              </div>
-            </BaseCard>
-
-            <BaseCard v-if="order.measurements && Object.keys(order.measurements).length" class="info-card read-only-card" :title="t('Measurement Table (cm)', 'جدول القياسات (سم)')">
-              <div class="measurements-flex">
-                <div v-for="(val, label) in order.measurements" :key="label" class="m-box">
-                  <span class="m-label">{{ label }}</span>
-                  <span class="m-val">{{ val }}</span>
-                </div>
-              </div>
-            </BaseCard>
-
-            <BaseCard v-if="order.colors && order.colors.length" class="info-card read-only-card" :title="t('Color Palette', 'لوحة الألوان')">
-              <div class="colors-flex">
-                <div v-for="(color, idx) in order.colors" :key="idx" class="color-item">
-                  <div class="color-circle" :style="{ background: color.hex }"></div>
-                  <div class="color-meta">
-                     <div class="hex">{{ color.name || color.hex }}</div>
-                     <div class="pantone">{{ color.pantone || color.hex }}</div>
-                  </div>
-                </div>
-              </div>
-            </BaseCard>
-
-            <!-- ====== SECTION: ADMIN PRODUCTION SETUP ====== -->
-            <div v-if="(activeTab === 'production' || !isMobile) && ['admin', 'superadmin', 'manager'].includes(currentUser?.role)" id="admin-production-setup" class="workflow-section">
-              <h2 class="workflow-title">{{ t('Admin Production Setup', 'إعداد إنتاج المسؤول') }}</h2>
-              <p class="admin-section-subtitle mb-1">{{ t('Factory Production Details', 'تفاصيل إنتاج المصنع') }}</p>
-              
-              <!-- Fabric Details (Collapsible) -->
-              <BaseCard class="info-card admin-spec-card collapsible-card" :class="{ 'collapsed': collapsed.fabric }">
-                <template #header>
-                  <div class="collapsible-header" @click="collapsed.fabric = !collapsed.fabric">
-                    <span class="collapsible-title">{{ t('Fabric Production Details', 'تفاصيل إنتاج القماش') }}</span>
-                    <svg class="chevron" :class="{ 'open': !collapsed.fabric }" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                  </div>
-                </template>
-                <div class="collapsible-body">
-                  <div class="admin-form-grid">
-                    <BaseInput v-model="adminForm.fabric_code" :label="t('Fabric Code', 'كود القماش')" :placeholder="t('e.g. FC-2024-001', 'مثال: FC-2024-001')" />
-                    <BaseInput v-model="adminForm.fabric_supplier" :label="t('Fabric Supplier', 'مورد القماش')" :placeholder="t('Supplier name', 'اسم المورد')" />
-                    <BaseInput v-model="adminForm.fabric_width" type="number" :label="t('Fabric Width (cm)', 'عرض القماش (سم)')" placeholder="150" />
-                    <BaseInput v-model="adminForm.dye_method" :label="t('Dye Method', 'طريقة الصباغة')" :placeholder="t('Reactive, Vat, Pigment...', 'تفاعلية، حوض، بجمنت...')" />
-                    <BaseInput v-model="adminForm.fabric_finish" :label="t('Fabric Finish', 'تشطيب القماش')" :placeholder="t('Peach, Brushed, Bio-wash...', 'خوخي، مشطوف، بيو ووش...')" />
-                  </div>
-                </div>
-              </BaseCard>
-
-              <!-- Trims (Collapsible) -->
-              <BaseCard class="info-card admin-spec-card collapsible-card" :class="{ 'collapsed': collapsed.trims }">
-                <template #header>
-                  <div class="collapsible-header" @click="collapsed.trims = !collapsed.trims">
-                    <span class="collapsible-title">{{ t('Trims & Accessories', 'الإضافات والإكسسوارات') }}</span>
-                    <svg class="chevron" :class="{ 'open': !collapsed.trims }" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                  </div>
-                </template>
-                <div class="collapsible-body">
-                  <div class="admin-form-grid">
-                    <BaseInput v-model="adminForm.zipper_type" :label="t('Zipper Type', 'نوع السحاب')" :placeholder="t('YKK #5 Metal', 'YKK #5 معدني')" />
-                    <BaseInput v-model="adminForm.button_type" :label="t('Button Type', 'نوع الزراير')" :placeholder="t('4-hole, Snap, Shank...', '4 ثقوب، كبسولة...')" />
-                    <BaseInput v-model="adminForm.cord_type" :label="t('Cord Type', 'نوع الحبل')" :placeholder="t('Round, Flat...', 'دائري، مسطح...')" />
-                    <BaseInput v-model="adminForm.rib_type" :label="t('Rib Type', 'نوع الريب')" :placeholder="t('1x1, 2x2...', '1×1، 2×2...')" />
-                    <BaseInput v-model="adminForm.thread_type" :label="t('Thread Type', 'نوع الخيط')" :placeholder="t('Polyester 40/2', 'بوليستر 40/2')" />
-                  </div>
-                </div>
-              </BaseCard>
-
-              <!-- Stitch & Construction (Collapsible) -->
-              <BaseCard class="info-card admin-spec-card collapsible-card" :class="{ 'collapsed': collapsed.stitch }">
-                <template #header>
-                  <div class="collapsible-header" @click="collapsed.stitch = !collapsed.stitch">
-                    <span class="collapsible-title">{{ t('Stitch & Construction', 'الخياطة والتصنيع') }}</span>
-                    <svg class="chevron" :class="{ 'open': !collapsed.stitch }" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                  </div>
-                </template>
-                <div class="collapsible-body">
-                  <div class="admin-form-grid">
-                    <BaseInput v-model="adminForm.stitch_type" :label="t('Stitch Type', 'نوع الغرزة')" :placeholder="t('Lock stitch, Chain stitch...', 'غرزة قفل، غرزة سلسلة...')" />
-                    <BaseInput v-model="adminForm.seam_type" :label="t('Seam Type', 'نوع الدرزة')" :placeholder="t('Flat, French, Overlock...', 'مسطحة، فرنسية، أوفرلوك...')" />
-                    <BaseInput v-model="adminForm.top_stitch" :label="t('Top Stitch', 'الغرزة العلوية')" :placeholder="t('1/4 inch, Double needle...', '¼ بوصة، إبرة مزدوجة...')" />
-                    <BaseInput v-model="adminForm.reinforcement" :label="t('Reinforcement', 'التعزيز')" :placeholder="t('Bar tack, Binding...', 'بار تاك، تطعيم...')" />
-                  </div>
-                </div>
-              </BaseCard>
-
-              <!-- Label Production (Collapsible) -->
-              <BaseCard class="info-card admin-spec-card collapsible-card" :class="{ 'collapsed': collapsed.labels }">
-                <template #header>
-                  <div class="collapsible-header" @click="collapsed.labels = !collapsed.labels">
-                    <span class="collapsible-title">{{ t('Label Production', 'إنتاج الليبلات') }}</span>
-                    <svg class="chevron" :class="{ 'open': !collapsed.labels }" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                  </div>
-                </template>
-                <div class="collapsible-body">
-                  <div class="admin-form-grid">
-                    <BaseInput v-model="adminForm.main_label_type" :label="t('Main Label Type', 'نوع الليبل الرئيسي')" :placeholder="t('Woven, Printed, Silicon...', 'منسوج، مطبوع، سيليكون...')" />
-                    <BaseInput v-model="adminForm.size_label_type" :label="t('Size Label Type', 'نوع ليبل المقاس')" placeholder="Woven" />
-                    <BaseInput v-model="adminForm.care_label_type" :label="t('Care Label Type', 'نوع ليبل العناية')" :placeholder="t('Satin, Taffeta...', 'ساتان، تافتا...')" />
-                    <BaseInput v-model="adminForm.label_position" :label="t('Label Position', 'موضع الليبل')" :placeholder="t('Center back neck, Side seam...', 'وسط الرقبة الخلفية، الدرزة الجانبية...')" />
-                  </div>
-                </div>
-              </BaseCard>
-
-              <!-- Packaging Details (Collapsible) -->
-              <BaseCard class="info-card admin-spec-card collapsible-card" :class="{ 'collapsed': collapsed.packaging }">
-                <template #header>
-                  <div class="collapsible-header" @click="collapsed.packaging = !collapsed.packaging">
-                    <span class="collapsible-title">{{ t('Packaging Details', 'تفاصيل التغليف') }}</span>
-                    <svg class="chevron" :class="{ 'open': !collapsed.packaging }" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                  </div>
-                </template>
-                <div class="collapsible-body">
-                  <div class="admin-form-grid">
-                    <BaseInput v-model="adminForm.packaging_type" :label="t('Packaging Type', 'نوع التغليف')" :placeholder="t('Polybag, Box, Hanger...', 'كيس بلاستيك، صندوق، شماعة...')" />
-                    <BaseInput v-model="adminForm.folding_method" :label="t('Folding Method', 'طريقة الطي')" :placeholder="t('Standard fold, Roll...', 'طي قياسي، لف...')" />
-                    <BaseInput v-model="adminForm.carton_qty" type="number" :label="t('Carton Quantity', 'كمية الكرتون')" placeholder="12" />
-                    <div class="checkbox-field">
-                      <label class="input-label">{{ t('Barcode Required', 'باركود مطلوب') }}</label>
-                      <div class="check-row">
-                        <input type="checkbox" v-model="adminForm.barcode_required" id="barcode-check" />
-                        <label for="barcode-check">{{ t('Yes, barcode is required', 'نعم، الباركود مطلوب') }}</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </BaseCard>
-
-              <!-- Internal Factory Notes -->
-              <BaseCard class="info-card admin-spec-card" :title="t('Internal Factory Notes', 'ملاحظات المصنع الداخلية')">
-                <textarea 
-                  v-model="adminForm.factory_notes" 
-                  class="factory-notes-textarea" 
-                  :placeholder="t('Internal instructions for the factory...', 'تعليمات داخلية للمصنع...')"
-                  rows="5"
-                ></textarea>
-              </BaseCard>
-
-              <!-- Save Button -->
-              <div class="admin-save-footer mt-1 mb-2">
-                <BaseButton size="lg" variant="primary" @click="saveProductionDetails" :loading="savingAdmin" block>
-                  <template #icon-left>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                  </template>
-                  {{ t('Save Production Details', 'حفظ تفاصيل الإنتاج') }}
-                </BaseButton>
-              </div>
+      <!-- Main Dashboard Grid -->
+      <div class="dashboard-grid">
+        <!-- Sidebar / Overview Info -->
+        <aside class="dashboard-sidebar">
+          <div class="saas-card profile-card text-center">
+            <div class="profile-img-wrap">
+                <img :src="order.design_front_image ? '/storage/' + order.design_front_image : '/images/product-placeholder.png'" 
+                     alt="product"
+                     @error="(e) => e.target.src = '/images/product-placeholder.png'"
+                >
             </div>
+            <h2 class="auth-title mt-2">{{ order.title || order.category?.name || t('Untitled Product', 'منتج بدون اسم') }}</h2>
+            <p class="text-gray-400 font-bold mb-2">#{{ order.order_code }}</p>
+            <span class="status-pill-large" :class="order.status">
+                {{ t(statusMap[order.status]?.en, statusMap[order.status]?.ar) }}
+            </span>
+            <div class="mt-4 pt-4 border-t border-dashed border-gray-200 text-left rtl-text-right">
+               <div class="mb-3">
+                  <span class="text-xs font-bold text-gray-400">{{ t('Client', 'العميل') }}</span>
+                  <div class="font-bold text-gray-800">{{ order.client?.brand_name || order.creator?.name }}</div>
+               </div>
+               <div class="mb-3">
+                  <span class="text-xs font-bold text-gray-400">{{ t('Quantity', 'الكمية') }}</span>
+                  <div class="font-bold text-gray-800">{{ order.production_details?.quantity || '---' }}</div>
+               </div>
+               <div class="mb-3">
+                  <span class="text-xs font-bold text-gray-400">{{ t('Season', 'الموسم') }}</span>
+                  <div class="font-bold text-gray-800">{{ t(order.season, seasonsAr[order.season]) }} {{ order.year }}</div>
+               </div>
+            </div>
+          </div>
+          
+          <OrderActions 
+            :order="order" 
+            :updating="updating" 
+            :statusTarget="statusTarget" 
+            :isAdmin="isAdmin"
+            @updateStatus="updateOrderStatus"
+            @scrollToAdmin="scrollToAdminSection"
+            @viewTechPack="showTechPack = true"
+          />
+        </aside>
 
-
-            <BaseCard v-if="order.images && order.images.length" class="info-card read-only-card" :title="t('Design Visuals', 'صور التصميم')">
-              <div class="gallery-grid">
-                 <div v-for="img in order.images" :key="img.id" class="gallery-img-box" @click="zoomImage(img.file_path)">
-                    <img :src="'/storage/' + img.file_path" alt="design">
-                    <div class="img-overlay">
-                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+        <!-- Main Content Area -->
+        <div class="dashboard-main">
+           <!-- Modern Tabs -->
+           <div class="saas-tabs-nav mb-4">
+              <button :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">{{ t('Overview', 'نظرة عامة') }}</button>
+              <button v-if="isAdmin" :class="{ active: activeTab === 'materials' }" @click="activeTab = 'materials'">{{ t('Materials', 'المواد') }}</button>
+              <button v-if="isAdmin" :class="{ active: activeTab === 'construction' }" @click="activeTab = 'construction'">{{ t('Construction', 'التصنيع') }}</button>
+              <button v-if="isAdmin" :class="{ active: activeTab === 'production' }" @click="activeTab = 'production'">{{ t('Production', 'الإنتاج') }}</button>
+              <button v-if="isAdmin" :class="{ active: activeTab === 'packaging' }" @click="activeTab = 'packaging'">{{ t('Packaging', 'التغليف') }}</button>
+              <button :class="{ active: activeTab === 'chat' }" @click="activeTab = 'chat'">{{ t('Chat', 'المحادثة') }}</button>
+           </div>
+           
+           <!-- Tab 1: Overview -->
+           <div v-show="activeTab === 'overview'" class="tab-pane fade-in">
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Technical Specifications', 'المواصفات الفنية') }}</h3>
+                 <div class="info-grid">
+                    <div class="info-item">
+                        <label>{{ t('Item Category', 'تصنيف القطعة') }}</label>
+                        <div class="val">{{ order.category?.name || '---' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>{{ t('Item Type', 'نوع القطعة') }}</label>
+                        <div class="val">{{ order.production_details?.item_type || '---' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>{{ t('Fit / Style', 'القصة / الستايل') }}</label>
+                        <div class="val">{{ order.production_details?.fit || t('Regular', 'عادي') }}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>{{ t('Sizes', 'المقاسات') }}</label>
+                        <div class="val">{{ formatSizes(order.production_details?.sizes) }}</div>
                     </div>
                  </div>
               </div>
-            </BaseCard>
-          </div>
-
-
-
-
-
-
-
-
-
-
-          <!-- Notes -->
-          <BaseCard class="info-card" :title="t('Additional Notes', 'ملاحظات إضافية')">
-             <div class="notes-content">
-                {{ order.notes || t('No specific notes provided.', 'لا توجد ملاحظات محددة.') }}
-             </div>
-          </BaseCard>
-
-          <!-- Order Activity Timeline -->
-          <BaseCard class="info-card activity-card" :title="t('Order Activity', 'سجل النشاط')">
-            <div v-if="order.status_history?.length" class="timeline">
-              <div v-for="log in order.status_history" :key="log.id" class="timeline-item">
-                <div class="timeline-dot-wrapper">
-                  <div class="timeline-dot" :class="log.new_status"></div>
-                  <div class="timeline-line"></div>
-                </div>
-                <div class="timeline-content">
-                  <div class="timeline-header">
-                    <span class="changer-name">{{ log.changer?.name }}</span>
-                    <span class="action-time">{{ formatFullDate(log.created_at) }}</span>
-                  </div>
-                  <div class="action-desc">
-                    {{ t('Moved order from', 'قام بنقل الطلب من') }} 
-                    <span class="status-badge-small" :class="log.old_status">{{ t(statusMap[log.old_status]?.en || 'Pending', statusMap[log.old_status]?.ar || 'قيد الانتظار') }}</span>
-                    {{ t('to', 'إلى') }}
-                    <span class="status-badge-small" :class="log.new_status">{{ t(statusMap[log.new_status]?.en, statusMap[log.new_status]?.ar) }}</span>
-                  </div>
-                </div>
+              
+              <div class="saas-card mb-4" v-if="order.colors && order.colors.length">
+                 <h3 class="card-title">{{ t('Color Palette', 'لوحة الألوان') }}</h3>
+                 <div class="colors-flex">
+                    <div v-for="(color, idx) in order.colors" :key="idx" class="color-item shadow-sm">
+                      <div class="color-circle" :style="{ background: color.hex }"></div>
+                      <div class="color-meta">
+                         <div class="hex">{{ color.name || color.hex }}</div>
+                         <div class="pantone">{{ color.pantone || color.hex }}</div>
+                      </div>
+                    </div>
+                 </div>
               </div>
-            </div>
-            <div v-else class="empty-timeline">
-              <p>{{ t('No status changes recorded yet.', 'لم يتم تسجيل أي تغييرات في الحالة بعد.') }}</p>
-            </div>
-          </BaseCard>
-        </div>
-
-        <aside v-if="activeTab === 'chat' || !isMobile" class="detail-sidebar">
-          <!-- Chat Section -->
-          <BaseCard class="chat-card">
-             <template #header>
-                <div class="chat-header">
-                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                   <span>{{ t('Direct Messaging', 'المحادثة المباشرة') }}</span>
-                </div>
-             </template>
-             
-             <div class="message-container" ref="messageBox">
-                <div v-for="msg in messages" :key="msg.id" :class="['message-blob', msg.sender_id === currentUser.id ? 'mine' : 'theirs']">
-                   <div class="blob-content">
-                      <div class="blob-sender" v-if="msg.sender_id !== currentUser.id">{{ msg.sender?.name }}</div>
-                      <div class="blob-text">{{ msg.content }}</div>
-                      <div class="blob-time">{{ formatTime(msg.created_at) }}</div>
+              
+              <div class="saas-card mb-4" v-if="order.images && order.images.length">
+                 <h3 class="card-title">{{ t('Design Visuals', 'صور التصميم') }}</h3>
+                 <div class="gallery-grid">
+                     <div v-for="img in order.images" :key="img.id" class="gallery-img-box" @click="zoomImage(img.file_path)">
+                        <img :src="'/storage/' + img.file_path" alt="design">
+                        <div class="img-overlay">
+                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                        </div>
+                     </div>
+                 </div>
+              </div>
+           </div>
+           
+           <!-- Tab 2: Materials -->
+           <div v-show="isAdmin && activeTab === 'materials'" class="tab-pane fade-in">
+              <div class="saas-card mb-4" id="admin-production-setup">
+                 <h3 class="card-title">{{ t('Fabric Specifications', 'مواصفات القماش') }}</h3>
+                 <div v-if="!isEditing" class="info-grid">
+                    <div class="info-item"><label>Fabric Type</label><div class="val">{{ techPack.fabric?.code || order.fabric_details?.type || '---' }}</div></div>
+                    <div class="info-item"><label>Supplier</label><div class="val">{{ techPack.fabric?.supplier || order.fabric_supplier || '---' }}</div></div>
+                    <div class="info-item"><label>Width</label><div class="val">{{ techPack.fabric?.width ? techPack.fabric.width + ' cm' : '---' }}</div></div>
+                    <div class="info-item"><label>Dye Method</label><div class="val">{{ techPack.fabric?.dye || '---' }}</div></div>
+                    <div class="info-item"><label>Finish</label><div class="val">{{ techPack.fabric?.finish || '---' }}</div></div>
+                    <div class="info-item"><label>Weight</label><div class="val">{{ order.fabric_details?.weight ? order.fabric_details.weight + ' gsm' : '---' }}</div></div>
+                 </div>
+                 <div v-else class="edit-grid">
+                    <div class="form-group"><label>Fabric Code/Type</label><input v-model="techPack.fabric.code" class="saas-input"/></div>
+                    <div class="form-group"><label>Supplier</label><input v-model="techPack.fabric.supplier" class="saas-input"/></div>
+                    <div class="form-group"><label>Width (cm)</label><input v-model="techPack.fabric.width" type="number" class="saas-input"/></div>
+                    <div class="form-group"><label>Dye Method</label><input v-model="techPack.fabric.dye" class="saas-input"/></div>
+                    <div class="form-group"><label>Fabric Finish</label><input v-model="techPack.fabric.finish" class="saas-input"/></div>
+                 </div>
+              </div>
+              
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Trims & Accessories', 'الإضافات والإكسسوارات') }}</h3>
+                 <div v-if="!isEditing" class="info-grid">
+                    <div class="info-item"><label>Zipper</label><div class="val">{{ techPack.trims?.zipper || '---' }}</div></div>
+                    <div class="info-item"><label>Button</label><div class="val">{{ techPack.trims?.button || '---' }}</div></div>
+                    <div class="info-item"><label>Cord</label><div class="val">{{ techPack.trims?.cord || '---' }}</div></div>
+                    <div class="info-item"><label>Rib</label><div class="val">{{ techPack.trims?.rib || '---' }}</div></div>
+                    <div class="info-item"><label>Thread</label><div class="val">{{ techPack.trims?.thread || '---' }}</div></div>
+                 </div>
+                 <div v-else class="edit-grid">
+                    <div class="form-group"><label>Zipper Type</label><input v-model="techPack.trims.zipper" class="saas-input"/></div>
+                    <div class="form-group"><label>Button Type</label><input v-model="techPack.trims.button" class="saas-input"/></div>
+                    <div class="form-group"><label>Cord Type</label><input v-model="techPack.trims.cord" class="saas-input"/></div>
+                    <div class="form-group"><label>Rib Type</label><input v-model="techPack.trims.rib" class="saas-input"/></div>
+                    <div class="form-group"><label>Thread Type</label><input v-model="techPack.trims.thread" class="saas-input"/></div>
+                 </div>
+              </div>
+           </div>
+           
+           <!-- Tab 3: Construction -->
+           <div v-show="isAdmin && activeTab === 'construction'" class="tab-pane fade-in">
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Stitch & Construction', 'الخياطة والتصنيع') }}</h3>
+                 <div v-if="!isEditing" class="info-grid">
+                    <div class="info-item"><label>Stitch Type</label><div class="val">{{ techPack.stitch?.stitch || '---' }}</div></div>
+                    <div class="info-item"><label>Seam Type</label><div class="val">{{ techPack.stitch?.seam || '---' }}</div></div>
+                    <div class="info-item"><label>SPI</label><div class="val">{{ techPack.stitch?.spi || '---' }}</div></div>
+                    <div class="info-item"><label>Reinforcement</label><div class="val">{{ techPack.stitch?.reinforcement || '---' }}</div></div>
+                    <div class="info-item"><label>Seam Allowance</label><div class="val">{{ techPack.stitch?.allowance || '---' }}</div></div>
+                 </div>
+                 <div v-else class="edit-grid">
+                    <div class="form-group"><label>Stitch Type</label><input v-model="techPack.stitch.stitch" class="saas-input"/></div>
+                    <div class="form-group"><label>Seam Type</label><input v-model="techPack.stitch.seam" class="saas-input"/></div>
+                    <div class="form-group"><label>SPI</label><input v-model="techPack.stitch.spi" class="saas-input"/></div>
+                    <div class="form-group"><label>Reinforcement</label><input v-model="techPack.stitch.reinforcement" class="saas-input"/></div>
+                    <div class="form-group"><label>Seam Allowance</label><input v-model="techPack.stitch.allowance" class="saas-input"/></div>
+                 </div>
+              </div>
+              
+              <div class="saas-card mb-4">
+                 <h3 class="card-title flex justify-between">{{ t('Model Anatomy (Parts List)', 'أجزاء القطعة') }}</h3>
+                 <div v-if="!isEditing" class="overflow-x-auto">
+                    <table class="saas-table text-left">
+                      <thead><tr><th>Piece</th><th>Part Name</th><th class="text-center">Qty</th><th class="text-center">Ref</th></tr></thead>
+                      <tbody>
+                        <tr v-for="(p, i) in techPack.parts" :key="i">
+                          <td><span class="font-bold">{{ p.piece }}</span></td>
+                          <td>{{ p.part }}</td>
+                          <td class="text-center"><span class="badge-blue">{{ p.qty }}</span></td>
+                          <td class="text-center">
+                            <img v-if="p.img" :src="p.img" style="width: 32px; height: 32px; object-fit: cover; border-radius: 6px; border:1px solid #e2e8f0; display:inline-block;" />
+                            <span v-else class="text-gray-300">-</span>
+                          </td>
+                        </tr>
+                        <tr v-if="!techPack.parts?.length"><td colspan="4" class="empty-state">No parts defined.</td></tr>
+                      </tbody>
+                    </table>
+                 </div>
+                 <div v-else class="dynamic-list-container">
+                    <div v-for="(p, i) in techPack.parts" :key="i" class="dynamic-edit-card">
+                       <div class="edit-card-header">
+                           <span class="font-bold text-gray-500 text-sm w-full">{{ t('Part #', 'جزء رقم ') }}{{ i + 1 }}</span>
+                           <button @click="techPack.parts.splice(i, 1)" class="btn-delete-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                       </div>
+                       <div class="edit-card-grid">
+                           <div class="form-group mb-0">
+                               <label>{{ t('Piece', 'القطعة') }}</label>
+                               <input v-model="p.piece" class="saas-input" placeholder="e.g. Front" />
+                           </div>
+                           <div class="form-group mb-0 md-col-span-2">
+                               <label>{{ t('Part / Description', 'الجزء / الوصف') }}</label>
+                               <input v-model="p.part" class="saas-input" placeholder="e.g. Left Pocket" />
+                           </div>
+                           <div class="form-group mb-0">
+                               <label>{{ t('Quantity', 'الكمية') }}</label>
+                               <input v-model="p.qty" type="number" class="saas-input text-center" placeholder="e.g. 2" />
+                           </div>
+                           <div class="form-group mb-0">
+                               <label>{{ t('Reference Image', 'صورة مرجعية') }}</label>
+                               <label class="modern-file-upload">
+                                  <input type="file" @change="e => handleImageUpload(e, p, 'img')" accept="image/*" class="hidden-input" />
+                                  <div class="upload-content" :class="{ 'has-file': p.img }">
+                                     <img v-if="p.img" :src="p.img.startsWith('data:') || p.img.startsWith('http') ? p.img : ('/storage/' + p.img)" class="preview-thumb" />
+                                     <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                     <span class="truncate">{{ p.img ? t('Change Image', 'تغيير الصورة') : t('Upload Image', 'رفع صورة') }}</span>
+                                  </div>
+                               </label>
+                           </div>
+                       </div>
+                    </div>
+                    <button @click="techPack.parts.push({ piece: '', part: '', qty: 1, img: '' })" class="btn-add-modern">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        {{ t('Add New Part', 'إضافة جزء جديد') }}
+                    </button>
+                 </div>
+              </div>
+              
+              <div class="saas-card mb-4" style="overflow-x: auto;">
+                 <h3 class="card-title">{{ t('Measurement Table', 'جدول القياسات') }}</h3>
+                 <table class="saas-table" v-if="!isEditing">
+                  <thead><tr><th class="text-left">POM</th><th class="text-center">Value</th><th class="text-center">Tol(+/-)</th></tr></thead>
+                  <tbody>
+                    <tr v-for="(m, i) in techPack.measurements" :key="i">
+                      <td class="font-bold text-left">{{ m.point }}</td><td class="text-center text-blue-600 font-bold">{{ m.value }}</td><td class="text-center text-gray-500">{{ m.tol }}</td>
+                    </tr>
+                    <tr v-if="!techPack.measurements?.length"><td colspan="3" class="empty-state">No measurements defined.</td></tr>
+                  </tbody>
+                 </table>
+                 <div v-else class="dynamic-list-container">
+                    <div v-for="(m, i) in techPack.measurements" :key="i" class="dynamic-edit-card">
+                       <div class="edit-card-header">
+                           <span class="font-bold text-gray-500 text-sm w-full">{{ t('Measurement #', 'قياس رقم ') }}{{ i + 1 }}</span>
+                           <button @click="techPack.measurements.splice(i, 1)" class="btn-delete-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                       </div>
+                       <div class="edit-card-grid">
+                           <div class="form-group mb-0 md-col-span-2">
+                               <label>{{ t('Point of Measure (POM)', 'نقطة القياس') }}</label>
+                               <input v-model="m.point" class="saas-input" placeholder="e.g. Chest Width" />
+                           </div>
+                           <div class="form-group mb-0">
+                               <label>{{ t('Value', 'القيمة') }}</label>
+                               <input v-model="m.value" class="saas-input text-center font-bold text-blue-600" placeholder="e.g. 50" />
+                           </div>
+                           <div class="form-group mb-0">
+                               <label>{{ t('Tolerance (+/-)', 'نسبة التفاوت') }}</label>
+                               <input v-model="m.tol" class="saas-input text-center text-gray-500" placeholder="e.g. 0.5 cm" />
+                           </div>
+                       </div>
+                    </div>
+                    <button @click="techPack.measurements.push({ point: '', value: '', tol: '0.5 cm' })" class="btn-add-modern">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        {{ t('Add Point of Measure', 'إضافة نقطة قياس') }}
+                    </button>
+                 </div>
+              </div>
+           </div>
+           
+           <!-- Tab 4: Production -->
+           <div v-show="isAdmin && activeTab === 'production'" class="tab-pane fade-in">
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Sewing Operation Sequence', 'تسلسل الخياطة') }}</h3>
+                 <div v-if="!isEditing" class="flex flex-col gap-3">
+                    <div v-for="(step, i) in techPack.steps" :key="i" class="flex items-start gap-3 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                       <div class="flex-shrink-0 bg-blue-100 text-blue-600 font-bold w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-sm">{{ i + 1 }}</div>
+                       <div class="text-gray-700 font-medium leading-relaxed pt-1">{{ step || t('Empty Step', 'خطوة فارغة') }}</div>
+                    </div>
+                    <div v-if="!techPack.steps?.length" class="empty-state">No sewing steps defined.</div>
+                 </div>
+                 <div v-else class="dynamic-list-container">
+                    <div v-for="(step, i) in techPack.steps" :key="i" class="dynamic-edit-card flex max-md:flex-col gap-3">
+                      <div class="step-num-icon flex-shrink-0 bg-blue-100 text-blue-600 font-bold w-10 h-10 rounded-full flex items-center justify-center">{{ i + 1 }}</div>
+                      <div class="form-group mb-0 flex-1 w-full">
+                         <label class="md:hidden">{{ t('Step Description', 'وصف الخطوة') }}</label>
+                         <input v-model="techPack.steps[i]" @keyup.enter="techPack.steps.push('')" class="saas-input" placeholder="e.g. Join front and back panels (Press Enter to add new)" />
+                      </div>
+                      <button @click="techPack.steps.splice(i, 1)" class="btn-delete-card self-center mt-2 md:mt-0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                    </div>
+                    <button @click="techPack.steps.push('')" class="btn-add-modern">
+                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                       {{ t('Add Sewing Step', 'إضافة خطوة خياطة') }}
+                    </button>
+                 </div>
+              </div>
+              
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Detail Zoom Image', 'صورة التكبير والتفاصيل') }}</h3>
+                 <div v-if="!isEditing">
+                   <div v-if="techPack.detail_zoom" class="img-zoom-wrap" @click="zoomImage(techPack.detail_zoom)">
+                       <img :src="techPack.detail_zoom.startsWith('data:') || techPack.detail_zoom.startsWith('http') ? techPack.detail_zoom : ('/storage/' + techPack.detail_zoom)" class="w-full max-w-sm rounded-xl shadow-sm object-cover" />
                    </div>
-                </div>
-                <div v-if="messages.length === 0" class="empty-chat">
-                   <p>{{ t('Start a conversation with the production team.', 'ابدأ المحادثة مع فريق الإنتاج.') }}</p>
-                </div>
-             </div>
+                   <div v-else class="empty-state">No zoom image provided.</div>
+                 </div>
+                 <div v-else class="img-upload-zone">
+                   <div v-if="techPack.detail_zoom" class="preview-zoom-card">
+                     <img :src="techPack.detail_zoom.startsWith('data:') || techPack.detail_zoom.startsWith('http') ? techPack.detail_zoom : ('/storage/' + techPack.detail_zoom)" class="preview-img" />
+                     <button @click="techPack.detail_zoom = ''" class="btn-remove-zoom">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                     </button>
+                   </div>
+                   <label v-else class="modern-dropzone">
+                       <input type="file" accept="image/*" @change="e => handleImageUpload(e, techPack, 'detail_zoom')" class="hidden-input" />
+                       <div class="dropzone-content">
+                           <div class="upload-icon-circle">
+                               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                           </div>
+                           <h4 class="font-bold text-gray-800">{{ t('Upload Reference Image', 'رفع صورة مرجعية') }}</h4>
+                           <span class="text-xs font-semibold text-gray-400 mt-1">{{ t('Drag & Drop or Click to browse (PNG, JPG)', 'اسحب الصورة هنا أو اضغط للاختيار') }}</span>
+                       </div>
+                   </label>
+                 </div>
+              </div>
+           </div>
+           
+           <!-- Tab 5: Packaging -->
+           <div v-show="isAdmin && activeTab === 'packaging'" class="tab-pane fade-in">
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Label Production', 'إنتاج الليبلات') }}</h3>
+                 <div v-if="!isEditing" class="info-grid">
+                    <div class="info-item"><label>Main Label</label><div class="val">{{ techPack.labels?.main || '---' }}</div></div>
+                    <div class="info-item"><label>Size Label</label><div class="val">{{ techPack.labels?.size || '---' }}</div></div>
+                    <div class="info-item"><label>Care Label</label><div class="val">{{ techPack.labels?.care || '---' }}</div></div>
+                    <div class="info-item"><label>Placement</label><div class="val">{{ techPack.labels?.pos || '---' }}</div></div>
+                 </div>
+                 <div v-else class="edit-grid">
+                    <div class="form-group"><label>Main Label Type</label><input v-model="techPack.labels.main" class="saas-input"/></div>
+                    <div class="form-group"><label>Size Label Type</label><input v-model="techPack.labels.size" class="saas-input"/></div>
+                    <div class="form-group"><label>Care Label Type</label><input v-model="techPack.labels.care" class="saas-input"/></div>
+                    <div class="form-group"><label>Label Position</label><input v-model="techPack.labels.pos" class="saas-input"/></div>
+                 </div>
+              </div>
+              
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Marker & Consumption', 'تخطيط الماركر') }}</h3>
+                 <div v-if="!isEditing" class="info-grid">
+                    <div class="info-item"><label>Marker Length</label><div class="val">{{ techPack.marker?.length || '---' }}</div></div>
+                    <div class="info-item"><label>Fabric Width</label><div class="val">{{ techPack.marker?.width || '---' }}</div></div>
+                    <div class="info-item"><label>Efficiency</label><div class="val">{{ techPack.marker?.eff ? techPack.marker.eff + '%' : '---' }}</div></div>
+                    <div class="info-item"><label>Parts Count</label><div class="val">{{ techPack.marker?.parts || '---' }}</div></div>
+                 </div>
+                 <div v-else class="edit-grid">
+                    <div class="form-group"><label>Marker Length</label><input v-model="techPack.marker.length" class="saas-input"/></div>
+                    <div class="form-group"><label>Fabric Width</label><input v-model="techPack.marker.width" class="saas-input"/></div>
+                    <div class="form-group"><label>Efficiency (%)</label><input v-model="techPack.marker.eff" class="saas-input"/></div>
+                    <div class="form-group"><label>Parts Count</label><input v-model="techPack.marker.parts" class="saas-input"/></div>
+                 </div>
+              </div>
+              
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Packaging Details', 'تفاصيل التغليف') }}</h3>
+                 <div v-if="!isEditing" class="info-grid">
+                    <div class="info-item"><label>Packaging Type</label><div class="val">{{ techPack.packaging?.type || '---' }}</div></div>
+                    <div class="info-item"><label>Folding Method</label><div class="val">{{ techPack.packaging?.fold || '---' }}</div></div>
+                    <div class="info-item"><label>Carton Qty</label><div class="val">{{ techPack.packaging?.qty || '---' }}</div></div>
+                    <div class="info-item"><label>Barcode Required</label><div class="val"><span class="badge-blue" v-if="techPack.packaging?.barcode">Yes</span><span v-else class="text-gray-400">No</span></div></div>
+                 </div>
+                 <div v-else class="edit-grid">
+                    <div class="form-group"><label>Packaging Type</label><input v-model="techPack.packaging.type" class="saas-input"/></div>
+                    <div class="form-group"><label>Folding Method</label><input v-model="techPack.packaging.fold" class="saas-input"/></div>
+                    <div class="form-group"><label>Carton Quantity</label><input v-model="techPack.packaging.qty" type="number" class="saas-input"/></div>
+                    <div class="form-group"><label>Barcode Required</label><input type="checkbox" v-model="techPack.packaging.barcode" class="checkbox-saas" /></div>
+                 </div>
+              </div>
+              
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Internal Factory Notes', 'ملاحظات المصنع الداخلية') }}</h3>
+                 <div v-if="!isEditing" class="notes-display">{{ techPack.notes || order.factory_notes || order.notes_factory || '---' }}</div>
+                 <textarea v-else v-model="techPack.notes" class="saas-textarea" placeholder="Internal instructions for the factory..."></textarea>
+              </div>
+           </div>
+           
+           <!-- Tab 6: Chat -->
+           <div v-show="activeTab === 'chat'" class="tab-pane fade-in">
+              <div class="saas-card chat-wrapper p-0 overflow-hidden" style="height:600px; display:flex; flex-direction:column;">
+                 <div class="bg-gray-50 border-b border-gray-100 p-4 font-bold text-gray-800 flex items-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> {{ t('Direct Messaging', 'المحادثة المباشرة') }}
+                 </div>
+                 <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-gray-50/50" ref="messageBox">
+                    <div v-for="msg in messages" :key="msg.id" :class="['message-bubble', msg.sender_id === currentUser.id ? 'my-msg' : 'their-msg']">
+                       <div class="bubble-sender" v-if="msg.sender_id !== currentUser.id">{{ msg.sender?.name }}</div>
+                       <div class="bubble-text">{{ msg.content }}</div>
+                       <div class="bubble-time">{{ formatTime(msg.created_at) }}</div>
+                    </div>
+                    <div v-if="messages.length === 0" class="empty-state" style="margin:auto;">
+                       {{ t('Start a conversation with the production team.', 'ابدأ المحادثة مع فريق الإنتاج.') }}
+                    </div>
+                 </div>
+                 <div class="p-4 border-t border-gray-100 flex gap-2 bg-white">
+                    <textarea v-model="newMessage" :placeholder="t('Type message...', 'اكتب رسالة...')" @keyup.enter.prevent="sendMessage" class="saas-textarea !min-h-[44px] !h-[44px] !mb-0"></textarea>
+                    <BaseButton @click="sendMessage" :disabled="sending || !newMessage.trim()" class="btn-gradient !w-12 !h-[44px] !p-0 mx-auto justify-center">
+                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </BaseButton>
+                 </div>
+              </div>
+           </div>
 
-             <template #footer>
-                <div class="chat-input">
-                   <textarea v-model="newMessage" :placeholder="t('Type message...', 'اكتب رسالة...')" @keyup.enter.prevent="sendMessage"></textarea>
-                   <BaseButton @click="sendMessage" :disabled="sending || !newMessage.trim()" class="send-btn-icon">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                   </BaseButton>
-                </div>
-             </template>
-          </BaseCard>
-          
-          <!-- Quick Status Actions (Admin Only) -->
-          <BaseCard v-if="['admin', 'superadmin', 'manager'].includes(currentUser?.role)" :title="t('Admin Controls', 'تحكم المسؤول')">
-            <div class="admin-actions">
-                <BaseButton v-if="order.status === 'pending'" variant="secondary" block size="sm" @click="updateOrderStatus('in_review')" :loading="updating && statusTarget === 'in_review'">
-                   {{ t('Move to Review', 'نقل للمراجعة') }}
-                </BaseButton>
-                <BaseButton v-if="order.status === 'in_review'" variant="secondary" block size="sm" @click="updateOrderStatus('sampling')" :loading="updating && statusTarget === 'sampling'">
-                   {{ t('Approve for Sampling', 'الموافقة على العينات') }}
-                </BaseButton>
-                <BaseButton v-if="order.status === 'sampling'" variant="secondary" block size="sm" @click="updateOrderStatus('approved')" :loading="updating && statusTarget === 'approved'">
-                   {{ t('Approve Sample', 'الموافقة على العينة') }}
-                </BaseButton>
-                <BaseButton v-if="order.status === 'approved'" variant="secondary" block size="sm" @click="updateOrderStatus('production')" :loading="updating && statusTarget === 'production'">
-                   {{ t('Start Production', 'بدء التصنيع') }}
-                </BaseButton>
-                <BaseButton v-if="order.status === 'production'" variant="secondary" block size="sm" @click="updateOrderStatus('completed')" :loading="updating && statusTarget === 'completed'">
-                   {{ t('Mark as Completed', 'تم الإكمال') }}
-                </BaseButton>
-                <BaseButton v-if="order.status !== 'completed' && order.status !== 'cancelled'" variant="ghost" block size="sm" class="mt-1" @click="updateOrderStatus('cancelled')" :loading="updating && statusTarget === 'cancelled'">
-                   {{ t('Cancel Order', 'إلغاء الطلب') }}
-                </BaseButton>
-             </div>
-          </BaseCard>
-        </aside>
+        </div>
       </div>
     </div>
+    
+    <!-- Floating Admin Save Bar / Mobile FAB -->
+    <div v-if="isAdmin && isEditing" class="floating-wrapper fade-in">
+       <!-- Desktop Full Bar -->
+       <div class="floating-save-bar desktop-save-bar">
+           <div class="floating-save-container">
+              <div class="flex-1 rtl-text-right">
+                 <h3 class="font-bold text-gray-800 text-lg">{{ t('Unsaved Changes', 'تغييرات لم يتم حفظها') }}</h3>
+                 <p class="text-xs font-semibold text-gray-500">{{ t('Please save your modifications before leaving.', 'يرجى حفظ التعديلات قبل المغادرة.') }}</p>
+              </div>
+              <div class="flex gap-3 justify-end">
+                 <BaseButton variant="outline" class="bg-gray-100 hover:bg-gray-200 border-none text-gray-700 min-w-[100px]" @click="isEditing = false" :disabled="isSavingAdminData">
+                    {{ t('Discard', 'إلغاء') }}
+                 </BaseButton>
+                 <BaseButton class="btn-gradient-success" @click="saveTechPackData" :loading="isSavingAdminData">
+                    <template #icon-left><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></template>
+                    {{ t('Save Improvements', 'حفظ التعديلات') }}
+                 </BaseButton>
+              </div>
+           </div>
+       </div>
 
-    <!-- Status Change Modal -->
+       <!-- Mobile Floating Action Buttons (FAB) -->
+       <div class="mobile-fab-container">
+          <button class="fab-btn fab-cancel" @click="isEditing = false" :disabled="isSavingAdminData" title="Discard">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button class="fab-btn fab-save" @click="saveTechPackData" :disabled="isSavingAdminData" title="Save Improvements">
+             <div v-if="isSavingAdminData" class="loader-spinner"></div>
+             <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          </button>
+       </div>
+    </div>
+
+    <AlertModal :show="alertModal.show" :title="alertModal.title" :message="alertModal.message" :type="alertModal.type" :isRtl="isRtl" @close="alertModal.show = false" />
     <div v-if="showStatusModal" class="modal-overlay" @click="showStatusModal = false">
        <div class="modal-card" @click.stop>
-          <h3 class="modal-title-custom">{{ t('Update Order Status', 'تحديث حالة الطلب') }}</h3>
-          <div class="status-options">
+          <h3 class="font-bold text-gray-800 text-lg mb-4">{{ t('Update Order Status', 'تحديث حالة الطلب') }}</h3>
+          <div class="flex flex-col gap-2">
              <button v-for="(val, key) in statusMap" :key="key" 
                      @click="updateOrderStatus(key)"
-                     :class="['status-opt', key, { active: order.status === key }]"
+                     class="text-left px-4 py-3 rounded-xl border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all font-bold text-gray-600 flex justify-between items-center"
+                     :class="{ '!border-blue-500 !bg-blue-50 !text-blue-600': order.status === key }"
              >
                 {{ t(val.en, val.ar) }}
+                <div class="w-2 h-2 rounded-full" :class="'bg-' + (order.status === key ? 'blue' : 'gray') + '-500'"></div>
              </button>
           </div>
        </div>
     </div>
-    <!-- Marker Update Modal -->
-    <div v-if="showMarkerModal" class="modal-overlay" @click="showMarkerModal = false">
-       <div class="modal-card" @click.stop>
-          <h3 class="modal-title-custom">{{ t('Update Marker Planning', 'تحديث تخطيط الماركر') }}</h3>
-          <div class="form-grid-2">
-             <BaseInput v-model="markerForm.marker_length" type="number" step="0.01" :label="t('Marker Length (m)', 'طول الماركر (متر)')" />
-             <BaseInput v-model="markerForm.fabric_width" type="number" step="0.01" :label="t('Fabric Width (m)', 'عرض القماش (متر)')" />
-             <BaseInput v-model="markerForm.efficiency" type="number" step="0.1" :label="t('Efficiency (%)', 'الكفاءة (%)')" />
-             <BaseInput v-model="markerForm.part_count" type="number" :label="t('Number of Parts', 'عدد الأجزاء')" />
-          </div>
-          <div class="mt-2 flex gap-1">
-             <BaseButton block @click="saveMarker" :loading="savingMarker">{{ t('Save Changes', 'حفظ التغييرات') }}</BaseButton>
-             <BaseButton block variant="white" @click="showMarkerModal = false">{{ t('Cancel', 'إلغاء') }}</BaseButton>
-          </div>
-       </div>
-    </div>
-
-    <!-- Technical Specs Modal -->
-    <div v-if="showTechModal" class="modal-overlay" @click="showTechModal = false">
-       <div class="modal-card tech-modal" @click.stop>
-          <h3 class="modal-title-custom">{{ t('Finalize Production Tech Specs', 'إكمال المواصفات الفنية للإنتاج') }}</h3>
-          <div class="tech-modal-body">
-             <h5 class="section-divider-title">{{ t('Fabric Details', 'تفاصيل القماش') }}</h5>
-             <div class="form-grid-2 mb-2">
-                <BaseInput v-model="techForm.fabric_details.type" :label="t('Fabric Type', 'نوع القماش')" />
-                <BaseInput v-model="techForm.fabric_details.weight" type="number" :label="t('GSM (Weight)', 'وزن القماش')" />
-                <BaseInput v-model="techForm.fabric_details.composition" :label="t('Composition', 'التكوين')" />
-                <BaseInput v-model="techForm.fabric_details.code" :label="t('Fabric Code', 'كود القماش')" />
-             </div>
-
-             <h5 class="section-divider-title">{{ t('Trims & Technical Details', 'الإضافات والتفاصيل الفنية') }}</h5>
-             <div class="form-grid-2 mb-2">
-                <BaseInput v-model="techForm.zipper_type" :label="t('Zipper Type', 'نوع السحاب')" />
-                <BaseInput v-model="techForm.button_type" :label="t('Button Type', 'نوع الزراير')" />
-                <BaseInput v-model="techForm.rib_type" :label="t('Rib Type', 'نوع الريب')" />
-                <BaseInput v-model="techForm.stitching_type" :label="t('Stitching Type', 'نوع الخياطة')" />
-             </div>
-
-             <h5 class="section-divider-title">{{ t('Branding & Packaging', 'البراندنج والتغليف') }}</h5>
-             <div class="form-grid-2">
-                <BaseInput v-model="techForm.main_label_type" :label="t('Main Label', 'الليبل الرئيسي')" />
-                <BaseInput v-model="techForm.size_label_type" :label="t('Size Label', 'ليبل المقاس')" />
-                <BaseInput v-model="techForm.packaging_type" :label="t('Packaging Type', 'نوع التغليف')" />
-                <BaseInput v-model="techForm.folding_method" :label="t('Folding Method', 'طريقة الطي')" />
-             </div>
-          </div>
-          <div class="mt-2 flex gap-1">
-             <BaseButton block @click="saveTechSpecs" :loading="savingTech">{{ t('Save & Set Ready', 'حفظ واعتماد الجاهزية') }}</BaseButton>
-             <BaseButton block variant="white" @click="showTechModal = false">{{ t('Close', 'إغلاق') }}</BaseButton>
-          </div>
-       </div>
-    </div>
+    
+  </div>
   </Layout>
 </template>
 
@@ -477,11 +510,25 @@ import Layout from '../../components/Layout.vue';
 import BaseCard from '../../components/UI/BaseCard.vue';
 import BaseButton from '../../components/UI/BaseButton.vue';
 import BaseInput from '../../components/UI/BaseInput.vue';
+import AlertModal from '../../components/UI/AlertModal.vue';
+import ModelAnatomyTable from '../../components/Orders/TechPack/ModelAnatomyTable.vue';
+import MarkerConsumption from '../../components/Orders/TechPack/MarkerConsumption.vue';
+import OrderActions from './Components/OrderActions.vue';
 
 import { ref, reactive, onMounted, nextTick, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { hasPermission } from '../../utils/permissions';
+import { useLang } from '../../composables/useLang';
+
+const props = defineProps({
+  id: { type: [String, Number], required: true }
+});
+
+const { t, isRtl } = useLang();
+
+// Auth header helper — single localStorage read per call
+const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('auth_token')}` });
 
 const route = useRoute();
 const router = useRouter();
@@ -493,9 +540,41 @@ const can = (perm) => currentUser.value ? hasPermission(currentUser.value, perm)
 const messageBox = ref(null);
 const sending = ref(false);
 const updating = ref(false);
+const isSavingAdminData = ref(false);
 const statusTarget = ref('');
-const activeTab = ref('production'); // 'production', 'client', 'chat'
+const activeTab = ref('overview'); // 'production', 'client', 'chat'
 const isMobile = ref(false);
+
+const isEditing = ref(false);
+const techPack = ref({
+   fabric: {}, trims: { zipper: '', button: '', cord: '', rib: '', thread: '' }, stitch: {}, labels: {}, marker: {}, packaging: {}, steps: [], parts: [], measurements: [], notes: '', detail_zoom: ''
+});
+
+const handleImageUpload = (event, targetObj, key) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        targetObj[key] = e.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
+const saveTechPackData = async () => {
+    isSavingAdminData.value = true;
+    try {
+        await axios.post(`/api/orders/${route.params.id}/tech-pack`, techPack.value, {
+            headers: authHeaders()
+        });
+        isEditing.value = false;
+        await fetchData();
+        showAlert(t('Tech Pack data has been successfully saved!', 'تم حفظ بيانات الملف الفني بنجاح!'), '', 'success');
+    } catch {
+        showAlert(t('Error saving Tech Pack.', 'خطأ في حفظ الملف الفني.'), '', 'error');
+    } finally {
+        isSavingAdminData.value = false;
+    }
+};
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768;
@@ -525,7 +604,20 @@ const showMarkerModal = ref(false);
 const showTechModal = ref(false);
 const savingMarker = ref(false);
 const savingTech = ref(false);
-const savingAdmin = ref(false);
+
+const alertModal = reactive({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info'
+});
+
+const showAlert = (message, title = '', type = 'info') => {
+  alertModal.message = message;
+  alertModal.title = title || (type === 'error' ? t('Error', 'خطأ') : t('Notification', 'تنبيه'));
+  alertModal.type = type;
+  alertModal.show = true;
+};
 
 const collapsed = reactive({
   fabric: false,
@@ -537,9 +629,8 @@ const collapsed = reactive({
 });
 
 const scrollToAdminSection = () => {
-  if (isMobile.value) {
-    activeTab.value = 'production';
-  }
+  activeTab.value = 'materials';
+  isEditing.value = true;
   nextTick(() => {
     const el = document.getElementById('admin-production-setup');
     if (el) {
@@ -600,7 +691,7 @@ watch(activeMarker, (newVal) => {
 const saveMarker = async () => {
    savingMarker.value = true;
    try {
-      const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token')}` };
+      const headers = authHeaders();
       if (activeMarker.value) {
          await axios.put(`/api/marker-plans/${activeMarker.value.id}`, markerForm, { headers });
       } else {
@@ -608,12 +699,14 @@ const saveMarker = async () => {
       }
       await fetchData();
       showMarkerModal.value = false;
-   } catch(e) { alert('Error saving marker'); }
-   finally { savingMarker.value = false; }
+   } catch {
+      showAlert(t('Error saving marker', 'خطأ في حفظ الماركر'), '', 'error');
+   } finally {
+      savingMarker.value = false;
+   }
 };
 
-const isRtl = computed(() => localStorage.getItem('lang') === 'ar');
-const t = (en, ar) => isRtl.value ? ar : en;
+const isAdmin = computed(() => ['admin', 'superadmin', 'manager'].includes(currentUser.value?.role));
 
 const statusMap = {
   submitted: { en: 'Submitted', ar: 'تم الإرسال' },
@@ -639,12 +732,12 @@ const updateOrderStatus = async (newStatus) => {
   updating.value = true;
   try {
     await axios.patch(`/api/orders/${order.value.id}/status`, { status: newStatus }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+      headers: authHeaders()
     });
     order.value.status = newStatus;
     showStatusModal.value = false;
-  } catch (e) {
-    alert(t('Update failed', 'فشل التحديث'));
+  } catch {
+    showAlert(t('Update failed', 'فشل التحديث'), '', 'error');
   } finally {
     updating.value = false;
   }
@@ -682,9 +775,8 @@ const populateAdminForm = (orderData) => {
 };
 
 const saveProductionDetails = async () => {
-  savingAdmin.value = true;
+  isSavingAdminData.value = true;
   try {
-    const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token')}` };
     const payload = {
       fabric_code: adminForm.fabric_code,
       fabric_supplier: adminForm.fabric_supplier,
@@ -706,36 +798,121 @@ const saveProductionDetails = async () => {
       carton_quantity: adminForm.carton_qty,
       factory_notes: adminForm.factory_notes,
     };
-    await axios.post(`/api/orders/${order.value.id}/production`, payload, { headers });
+    await axios.post(`/api/orders/${order.value.id}/production`, payload, { headers: authHeaders() });
     await fetchData();
-    alert(t('Production details saved successfully!', 'تم حفظ تفاصيل الإنتاج بنجاح!'));
-  } catch (e) {
-    console.error('Save error:', e.response?.data || e);
-    alert(t('Failed to save production details.', 'فشل حفظ تفاصيل الإنتاج.'));
+    showAlert(t('Production details saved successfully!', 'تم حفظ تفاصيل الإنتاج بنجاح!'), '', 'success');
+  } catch {
+    showAlert(t('Failed to save production details.', 'فشل حفظ تفاصيل الإنتاج.'), '', 'error');
   } finally {
-    savingAdmin.value = false;
+    isSavingAdminData.value = false;
   }
 };
 
 const fetchData = async () => {
   if (!can('orders.view')) return router.push('/dashboard');
-  const token = localStorage.getItem('auth_token');
-  const headers = { Authorization: `Bearer ${token}` };
+  const headers = authHeaders();
   try {
     const resOrder = await axios.get(`/api/orders/${route.params.id}`, { headers });
     order.value = resOrder.data;
     populateAdminForm(resOrder.data);
-    const resMessages = await axios.get(`/api/orders/${route.params.id}/messages`, { headers });
-    messages.value = resMessages.data;
+
+    // Fetch tech pack (admin only) and messages in parallel
+    const promises = [
+      axios.get(`/api/orders/${route.params.id}/messages`, { headers })
+    ];
+    if (isAdmin.value) {
+      promises.unshift(axios.get(`/api/orders/${route.params.id}/tech-pack`, { headers }).catch(() => null));
+    }
+
+    const results = await Promise.all(promises);
+    const tpRes = isAdmin.value ? results[0] : null;
+    const msgRes = isAdmin.value ? results[1] : results[0];
+
+    if (tpRes) {
+      const tpData = order.value?.tech_pack || {};
+      
+      techPack.value = {
+         fabric: tpData.fabric ?? {},
+         trims: tpData.trims ?? {},
+         stitch: tpData.stitch ?? {},
+         labels: tpData.labels ?? {},
+         marker: tpData.marker ?? {},
+         packaging: tpData.packaging ?? {},
+         steps: Array.isArray(tpData.steps) ? tpData.steps : [],
+         parts: Array.isArray(tpData.parts) ? tpData.parts : [],
+         measurements: Array.isArray(tpData.measurements) ? tpData.measurements : [],
+         notes: tpData.notes ?? '',
+         detail_zoom: tpData.detail_zoom ?? ''
+      };
+
+      // Fallback to order relationships if tech pack JSON is empty
+      const isTpEmpty = !Object.keys(techPack.value.fabric).length && !Object.keys(techPack.value.trims).length;
+      if (isTpEmpty && order.value) {
+         const po = order.value;
+         const prod = po.production || {};
+         techPack.value.fabric = {
+           code: prod.fabric_code || po.fabric_details?.code || po.fabric_type || '', 
+           supplier: prod.fabric_supplier || po.fabric_details?.supplier || '',
+           width: prod.fabric_width || po.fabric_details?.width || '', 
+           dye: prod.dye_method || po.fabric_details?.dye_method || '', 
+           finish: prod.fabric_finish || po.fabric_details?.finish || ''
+         };
+         techPack.value.trims = {
+           zipper: prod.zipper_type || '', button: prod.button_type || '',
+           cord: prod.cord_type || po.drawcord_type || '', rib: prod.rib_type || '', thread: prod.thread_type || ''
+         };
+         techPack.value.stitch = { 
+           stitch: prod.stitching_type || prod.stitch_type || '', 
+           seam: prod.seam_type || '', 
+           spi: prod.spi || '', 
+           thread: prod.thread_type || '', 
+           reinforcement: prod.reinforcement || '', 
+           allowance: prod.seam_allowance || '' 
+         };
+         techPack.value.labels = { 
+           main: prod.main_label_type || '', 
+           size: prod.size_label_type || '', 
+           care: prod.care_label_type || '', 
+           pos: prod.label_position || '' 
+         };
+         techPack.value.marker = { 
+           length: po.markerPlans?.[0]?.marker_length || '', 
+           width: po.markerPlans?.[0]?.fabric_width || '', 
+           eff: po.markerPlans?.[0]?.efficiency || '', 
+           parts: po.markerPlans?.[0]?.part_count || '' 
+         };
+         techPack.value.packaging = { 
+           type: prod.packaging_type || '', 
+           fold: prod.folding_method || '', 
+           qty: prod.carton_quantity || '', 
+           barcode: !!prod.barcode_required 
+         };
+         techPack.value.notes = prod.factory_notes || po.notes_factory || '';
+         techPack.value.steps = Array.isArray(prod.sewing_sequence) ? prod.sewing_sequence : (Array.isArray(po.steps) ? po.steps : []);
+         
+         const pts = po.order_measurements || [];
+         if (pts.length) {
+            techPack.value.measurements = pts.map(p => ({ point: p.point_of_measure, value: p.dimension_value || '', tol: p.tolerance || '' }));
+         }
+         
+         const anatomies = po.anatomies || [];
+         if (anatomies.length) {
+            techPack.value.parts = anatomies.map(p => ({ piece: p.piece_name || '', part: p.part_name || '', qty: p.count || 1, img: p.image_path || '' }));
+         }
+         
+         techPack.value.detail_zoom = po.detail_zoom || '';
+      }
+    }
+
+    messages.value = msgRes?.data ?? [];
     scrollToBottom();
-  } catch (e) {}
+  } catch { /* errors surfaced via alert in sub-calls */ }
 };
 
 onMounted(fetchData);
 
 const sendMessage = async () => {
-  if (!order.value || !currentUser.value) return;
-  if (!newMessage.value.trim() || sending.value) return;
+  if (!order.value || !currentUser.value || !newMessage.value.trim() || sending.value) return;
   sending.value = true;
   try {
     const receiverId = order.value.created_by === currentUser.value.id ? 1 : order.value.created_by;
@@ -743,9 +920,7 @@ const sendMessage = async () => {
       order_id: order.value.id,
       receiver_id: receiverId,
       content: newMessage.value
-    }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
-    });
+    }, { headers: authHeaders() });
     newMessage.value = '';
     await fetchData();
   } finally {
@@ -767,478 +942,617 @@ const formatFullDate = (date) => new Date(date).toLocaleDateString(isRtl.value ?
 });
 const formatTime = (date) => new Date(date).toLocaleTimeString(isRtl.value ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 const zoomImage = (path) => window.open('/storage/' + path, '_blank');
-const printTechPack = () => {
-   window.print();
-};
 </script>
 
 <style scoped>
-/* UI/UX & Mobile Optimizations */
-.mobile-tabs-nav {
-  display: none;
-  background: white;
-  padding: 0.5rem;
-  border-radius: 14px;
-  margin-bottom: 1.5rem;
-  border: 1px solid #f1f5f9;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  position: sticky;
-  top: 0.5rem;
-  z-index: 100;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-}
-.mobile-tabs-nav button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0.75rem 0.25rem;
-  border: none;
-  background: transparent;
-  color: #94a3b8;
-  font-size: 0.7rem;
-  font-weight: 800;
-  border-radius: 10px;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-.mobile-tabs-nav button svg { width: 18px; height: 18px; }
-.mobile-tabs-nav button.active {
-  background: #f0f9ff;
-  color: #0ea5e9;
-}
-
-@media (max-width: 768px) {
-  .mobile-tabs-nav { display: grid; }
-  .preview-flex { flex-direction: column; align-items: stretch; gap: 1.5rem; text-align: center; }
-  .preview-img { margin: 0 auto; width: 100px; height: 100px; }
-  .preview-meta-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 100%; text-align: left; }
-  .rtl .preview-meta-grid { text-align: right; }
-  .preview-actions { width: 100%; }
-  .workflow-title { font-size: 0.75rem; }
-  .detail-main { padding-bottom: 8rem; }
-  
-  /* Fixed Footer for Save Button */
-  .admin-save-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: white;
-    padding: 1rem;
-    box-shadow: 0 -10px 15px -3px rgba(0,0,0,0.1);
-    z-index: 1000;
-    margin-top: 0;
-  }
-  
-  /* Make collapsed headers bigger for thumbs */
-  .collapsible-header { padding: 1.25rem; }
-  .spec-row { grid-template-columns: 1fr 1fr; }
-  .m-box { min-width: 80px; flex: 1; }
-}
-
 .order-detail-view {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding-bottom: 5rem;
-}
-
-.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; }
-.header-left { flex: 1; }
-.breadcrumb-mini { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem; }
-.breadcrumb-mini a { color: inherit; text-decoration: none; }
-.breadcrumb-mini .sep { opacity: 0.5; }
-.breadcrumb-mini .active { color: #0ea5e9; }
-
-.page-title { font-size: 2rem; font-weight: 800; color: #1a3a5f; margin: 0; letter-spacing: -0.02em; }
-.meta-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
-.meta-item { font-size: 0.875rem; color: #64748b; font-weight: 600; }
-.clickable-brand { cursor: pointer; color: #0ea5e9; font-weight: 800; }
-.clickable-brand:hover { text-decoration: underline; }
-.dot { width: 4px; height: 4px; border-radius: 50%; background: #e2e8f0; }
-
-.header-actions { display: flex; align-items: center; gap: 1rem; }
-/* 1. Product Preview Enhancement */
-.product-preview-card {
-  margin-bottom: 2rem;
-  border: 1px solid #eef2f6;
-  background: white;
-}
-.preview-flex {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-}
-.preview-img {
-  width: 120px;
-  height: 120px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 4px solid #f8fafc;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  flex-shrink: 0;
-}
-.preview-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.preview-info {
-  flex: 1;
-}
-.preview-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #1a3a5f;
-  margin: 0 0 0.75rem 0;
-  letter-spacing: -0.01em;
-}
-.preview-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(4, auto);
-  gap: 2rem;
-  margin-bottom: 1rem;
-}
-.p-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.p-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.p-val {
-  font-size: 0.875rem;
-  font-weight: 700;
+  background: #f8f9fc;
+  min-height: 100vh;
+  padding: 2rem 5%;
+  font-family: 'Inter', system-ui, sans-serif;
   color: #1e293b;
 }
-.preview-status-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.preview-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-width: 200px;
-}
 
-/* 2. Workflow Structure */
-.workflow-section {
-  margin-bottom: 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-.workflow-title {
-  font-size: 0.875rem;
-  font-weight: 900;
-  color: #64748b;
-  letter-spacing: 0.15em;
-  padding: 0 0.5rem;
-  border-left: 4px solid #3b82f6;
-  margin-bottom: 0.5rem;
-}
-.rtl .workflow-title {
-  border-left: none;
-  border-right: 4px solid #3b82f6;
-}
-
-/* 3. Collapsible Logic */
-.collapsible-card {
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-.collapsible-header {
+/* Header */
+.page-top-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-  background: #fcfdfe;
-  user-select: none;
+  margin-bottom: 2rem;
 }
-.collapsible-header:hover {
-  background: #f8fafc;
-}
-.collapsible-title {
-  font-weight: 800;
-  color: #1a3a5f;
-  font-size: 0.9375rem;
-}
-.chevron {
-  transition: transform 0.3s ease;
-  color: #94a3b8;
-}
-.chevron.open {
-  transform: rotate(180deg);
-}
-.collapsible-body {
-  padding: 1.5rem;
-  border-top: 1px solid #f1f5f9;
-}
-.collapsed .collapsible-body {
-  display: none;
-}
-
-.read-only-card {
-  background: #fafbfc;
-  border: 1px dashed #e2e8f0;
-}
-
-.status-pill-large { padding: 0.5rem 1.25rem; border-radius: 10px; font-size: 0.8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid transparent; }
-
-.status-pill-large.pending { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
-.status-pill-large.in_review { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
-.status-pill-large.sampling { background: #f5f3ff; color: #6d28d9; border-color: #ede9fe; }
-.status-pill-large.approved { background: #f0fdf4; color: #15803d; border-color: #dcfce7; }
-.status-pill-large.production { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
-.status-pill-large.completed { background: #ecfdf5; color: #064e3b; border-color: #d1fae5; }
-.status-pill-large.cancelled { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
-
-.detail-grid { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
-@media (max-width: 1024px) { .detail-grid { grid-template-columns: 1fr; } }
-
-.info-card { margin-bottom: 2rem; }
-.spec-list { padding-top: 0.5rem; }
-.spec-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-.spec-item { display: flex; flex-direction: column; gap: 0.35rem; }
-.spec-label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
-.spec-value { font-size: 0.9375rem; font-weight: 700; color: #1a3a5f; }
-.divider { height: 1px; background: #f1f5f9; margin: 1.25rem 0; }
-
-.measurements-flex { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.m-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 0.875rem 1rem; border-radius: 12px; text-align: center; min-width: 100px; }
-.m-label { display: block; font-size: 0.65rem; font-weight: 700; color: #94a3b8; margin-bottom: 4px; }
-.m-val { font-size: 1.125rem; font-weight: 800; color: #1a3a5f; }
-
-.colors-flex { display: flex; flex-wrap: wrap; gap: 1rem; }
-.color-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem; background: #fcfdfe; border: 1px solid #f1f5f9; border-radius: 12px; min-width: 160px; }
-.color-circle { width: 44px; height: 44px; border-radius: 10px; border: 2px solid white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-.color-meta .hex { font-size: 0.8125rem; font-weight: 800; color: #1a3a5f; }
-.color-meta .pantone { font-size: 0.65rem; font-weight: 600; color: #94a3b8; }
-
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem; }
-.gallery-img-box { position: relative; aspect-ratio: 1; border-radius: 14px; overflow: hidden; border: 1px solid #f1f5f9; cursor: pointer; }
-.gallery-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-.img-overlay { position: absolute; inset: 0; background: rgba(14, 165, 233, 0.2); display: flex; align-items: center; justify-content: center; opacity: 0; color: white; transition: all 0.2s; }
-.gallery-img-box:hover img { transform: scale(1.1); }
-.gallery-img-box:hover .img-overlay { opacity: 1; }
-
-.notes-content { padding: 1.25rem; background: #f8fafc; border-radius: 12px; color: #475569; line-height: 1.6; font-size: 0.9375rem; white-space: pre-wrap; border: 1px solid #f1f5f9; }
-
-.marker-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; }
-.m-stat { background: #fafbfc; padding: 1rem; border-radius: 12px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 4px; }
-.m-value { font-size: 1.125rem; font-weight: 800; color: #1a3a5f; }
-
-.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.p-1-5 { padding: 1.5rem; }
-.mt-1 { margin-top: 1rem; }
-.mt-2 { margin-top: 2rem; }
-.flex { display: flex; }
-.gap-1 { gap: 1rem; }
-
-/* Chat Section */
-.chat-card { height: 600px; display: flex; flex-direction: column; position: sticky; top: 2rem; }
-.chat-header { display: flex; align-items: center; gap: 0.625rem; font-weight: 800; color: #1a3a5f; font-size: 0.9375rem; }
-.message-container { flex: 1; overflow-y: auto; padding: 1.25rem; background: #fafbfc; display: flex; flex-direction: column; gap: 1rem; }
-.message-blob { max-width: 85%; }
-.message-blob.mine { align-self: flex-end; }
-.message-blob.theirs { align-self: flex-start; }
-.blob-content { padding: 0.875rem 1rem; border-radius: 14px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.mine .blob-content { background: #1a3a5f; color: white; border-bottom-right-radius: 4px; }
-.theirs .blob-content { background: white; color: #1e293b; border: 1px solid #eef2f6; border-bottom-left-radius: 4px; }
-.blob-sender { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; opacity: 0.8; }
-.blob-text { font-size: 0.875rem; line-height: 1.5; white-space: pre-wrap; }
-.blob-time { font-size: 0.625rem; opacity: 0.5; text-align: right; margin-top: 4px; }
-
-.chat-input { display: flex; gap: 0.75rem; padding: 1.25rem; border-top: 1px solid #f1f5f9; }
-.chat-input textarea { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; height: 44px; resize: none; font-size: 0.875rem; transition: border-color 0.2s; }
-.chat-input textarea:focus { border-color: #0ea5e9; outline: none; }
-.send-btn-icon { width: 44px; height: 44px; padding: 0 !important; flex-shrink: 0; }
-
-.admin-actions { display: grid; gap: 0.75rem; }
-
-/* Modal Styles */
-.modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 200; }
-.modal-card { background: white; width: 420px; border-radius: 20px; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-.modal-title-custom { color: #1a3a5f; margin: 0 0 1.5rem; font-weight: 800; }
-.status-options { display: flex; flex-direction: column; gap: 0.75rem; }
-.status-opt { padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; background: white; font-weight: 700; color: #475569; text-align: left; transition: all 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
-.status-opt:hover { background: #f8fafc; border-color: #0ea5e9; }
-.status-opt.active { border-color: #0ea5e9; background: #f0f9ff; color: #0ea5e9; }
-
-.status-opt.submitted::after { background: #64748b; }
-.status-opt.pending::after { background: #94a3b8; }
-.status-opt.technical_ready::after { background: #0ea5e9; }
-.status-opt.in_review::after { background: #3b82f6; }
-.status-opt.sampling::after { background: #8b5cf6; }
-.status-opt.approved::after { background: #10b981; }
-.status-opt.production::after { background: #f97316; }
-.status-opt.completed::after { background: #064e3b; }
-.status-opt.cancelled::after { background: #ef4444; }
-
-.tech-modal { width: 600px; }
-.tech-modal-body { max-height: 60vh; overflow-y: auto; padding-right: 10px; }
-.section-divider-title { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin: 1.5rem 0 1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 2rem; }
-
-.rtl .page-header, .rtl .status-opt { text-align: right; }
-.rtl .status-pill-large { margin-right: 0; }
-.rtl .header-actions { flex-direction: row-reverse; }
-.rtl .status-opt::after { margin-right: auto; margin-left: 0; }
-
-/* Timeline Styles */
-.activity-card { margin-top: 1rem; }
-.timeline { display: flex; flex-direction: column; padding: 0.5rem 0; }
-.timeline-item { display: flex; gap: 1.5rem; }
-.timeline-dot-wrapper { display: flex; flex-direction: column; align-items: center; width: 24px; }
-.timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #e2e8f0; border: 2px solid white; box-shadow: 0 0 0 4px #f8fafc; z-index: 2; margin-top: 6px; }
-.timeline-line { flex: 1; width: 2px; background: #f1f5f9; margin-top: -4px; z-index: 1; }
-.timeline-item:last-child .timeline-line { display: none; }
-
-.timeline-content { flex: 1; padding-bottom: 2rem; }
-.timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-.changer-name { font-size: 0.875rem; font-weight: 800; color: #1e293b; }
-.action-time { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
-.action-desc { font-size: 0.8125rem; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-.status-badge-small { padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
-
-/* Status-specific timeline dots */
-.timeline-dot.pending { background: #94a3b8; }
-.timeline-dot.in_review { background: #3b82f6; }
-.timeline-dot.sampling { background: #8b5cf6; }
-.timeline-dot.approved { background: #10b981; }
-.timeline-dot.production { background: #f97316; }
-.timeline-dot.completed { background: #064e3b; }
-.timeline-dot.cancelled { background: #ef4444; }
-
-/* status badge small colors */
-.status-badge-small.pending { background: #f1f5f9; color: #475569; }
-.status-badge-small.in_review { background: #eff6ff; color: #1e40af; }
-.status-badge-small.sampling { background: #f5f3ff; color: #6d28d9; }
-.status-badge-small.approved { background: #f0fdf4; color: #15803d; }
-.status-badge-small.production { background: #fff7ed; color: #c2410c; }
-.status-badge-small.completed { background: #ecfdf5; color: #064e3b; }
-.status-badge-small.cancelled { background: #fef2f2; color: #991b1b; }
-
-.empty-timeline { padding: 2rem; text-align: center; color: #94a3b8; font-weight: 600; }
-
-/* ===== Admin Production Spec Styles ===== */
-.admin-section-divider {
+.breadcrumb-mini {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  margin: 2.5rem 0 2rem;
+  gap: 0.5rem;
 }
-.divider-line {
-  flex: 1;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #0ea5e9, transparent);
+.breadcrumb-mini a {
+  color: #0ea5e9;
+  text-decoration: none;
+  transition: opacity 0.2s;
 }
-.divider-label {
+.breadcrumb-mini a:hover { opacity: 0.8; }
+.breadcrumb-mini .active { color: #0f172a; }
+
+.actions-right {
+  display: flex;
+  gap: 1rem;
+}
+.btn-gradient {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-gradient:hover {
+  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
+  transform: translateY(-1px);
+}
+
+.tech-pack-top-btn {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: white;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tech-pack-top-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+.btn-gradient-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s;
+}
+
+/* Layout Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Sidebar */
+.saas-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 10px 15px -3px rgba(0,0,0,0.02), 0 0 0 1px rgba(15, 23, 42, 0.03);
+}
+.profile-img-wrap {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 1.25rem;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 4px solid #f8fafc;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+.profile-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.auth-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+.status-pill-large {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 800;
-  color: #0ea5e9;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.5px;
+  background: #f1f5f9;
+  color: #475569;
+}
+.status-pill-large.approved { background: #dcfce7; color: #166534; }
+.status-pill-large.production { background: #ffedd5; color: #9a3412; }
+.status-pill-large.completed { background: #ccfbf1; color: #115e59; }
+
+/* Tabs Navbar */
+.saas-tabs-nav {
+  display: flex;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 16px;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  overflow-x: auto;
+}
+.saas-tabs-nav button {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
   white-space: nowrap;
 }
+.saas-tabs-nav button:hover { background: #f8fafc; color: #0f172a; }
+.saas-tabs-nav button.active {
+  background: #0f172a;
+  color: white;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
 
-.admin-section-subtitle {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: -1rem 0 2.5rem;
+/* Forms & Grids */
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+.info-item label {
+  display: block;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+.info-item .val {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.saas-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
+  color: #1e293b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+.saas-input:focus {
+  background: white;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+  outline: none;
+}
+.saas-textarea {
+  width: 100%;
+  padding: 1rem;
+  min-height: 120px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  resize: vertical;
+}
+
+/* Colors & Gallery */
+.colors-flex { display: flex; gap: 1rem; flex-wrap: wrap; }
+.color-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 12px; background: white; border: 1px solid #f1f5f9; }
+.color-circle { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.color-meta .hex { font-size: 0.8125rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; }
+.color-meta .pantone { font-size: 0.7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+.gallery-img-box { position: relative; aspect-ratio: 1; border-radius: 16px; overflow: hidden; cursor: pointer; border: 1px solid #e2e8f0; }
+.gallery-img-box img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+.gallery-img-box:hover img { transform: scale(1.05); }
+.img-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; color: white; }
+.gallery-img-box:hover .img-overlay { opacity: 1; }
+
+/* Dynamic Arrays */
+.dynamic-row { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; align-items: center; }
+.btn-delete {
+  background: #fef2f2; color: #ef4444; border: none; border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s;
+}
+.btn-delete:hover { background: #fee2e2; color: #b91c1c; transform: scale(1.05); }
+.btn-add {
+  display: block; width: 100%; padding: 0.875rem; background: transparent; border: 2px dashed #cbd5e1; color: #64748b; font-weight: 800; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+}
+.btn-add:hover { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; }
+
+/* Modern Edit Cards */
+.dynamic-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.dynamic-edit-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+  transition: border-color 0.2s;
+}
+.dynamic-edit-card:focus-within {
+  border-color: #0ea5e9;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.08);
+}
+.edit-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.btn-delete-card {
+  background: #fef2f2;
+  color: #ef4444;
+  border: none;
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-delete-card:hover {
+  background: #fee2e2;
+  transform: scale(1.05);
+}
+.edit-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .edit-card-grid { grid-template-columns: repeat(4, 1fr); }
+  .md-col-span-2 { grid-column: span 2; }
+}
+.modern-file-upload {
+  display: block;
+  cursor: pointer;
+  height: 48px;
+}
+.hidden-input { display: none; }
+.upload-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  padding: 0 1rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  transition: all 0.2s;
+}
+.upload-content:hover {
+  background: #f0f9ff;
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+}
+.upload-content.has-file {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  border-style: solid;
+  color: #15803d;
+}
+.preview-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.btn-add-modern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  color: #475569;
+  font-weight: 800;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-add-modern:hover {
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+  background: #f0f9ff;
+}
+
+.modern-dropzone {
+  display: block;
+  width: 100%;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2.5rem 1rem;
+}
+.modern-dropzone:hover {
+  border-color: #0ea5e9;
+  background: #f0f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.1);
+}
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
-
-.admin-production-wrapper {
-  scroll-margin-top: 2rem;
+.upload-icon-circle {
+  width: 56px;
+  height: 56px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0ea5e9;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  margin-bottom: 1rem;
+  border: 1px solid #e0f2fe;
+}
+.modern-dropzone:hover .upload-icon-circle {
+  background: #0ea5e9;
+  color: white;
+}
+.preview-zoom-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 4px solid #f1f5f9;
+  display: inline-block;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+.preview-img {
+  max-width: 100%;
+  max-height: 350px;
+  object-fit: contain;
+  display: block;
+}
+.btn-remove-zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #ef4444;
+  border: none;
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+}
+.btn-remove-zoom:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
 }
 
-.admin-spec-card {
-  border-left: 3px solid #0ea5e9;
+.floating-save-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem 0;
+  z-index: 1000;
+  box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.05);
 }
-
-.admin-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.floating-save-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1rem;
 }
 
-.checkbox-field {
+/* Mobile Floating Action Buttons */
+.mobile-fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 14px;
+  z-index: 1005;
 }
-.check-row {
+.rtl .mobile-fab-container {
+  left: 24px;
+  right: auto;
+}
+.fab-btn {
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  margin-top: 0.5rem;
-}
-.check-row input[type="checkbox"] {
-  width: 1.2rem;
-  height: 1.2rem;
-  accent-color: #0ea5e9;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: white;
 }
-.check-row label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
-  cursor: pointer;
+.fab-btn:active {
+  transform: scale(0.92);
 }
-
-.factory-notes-textarea {
-  width: 100%;
-  min-height: 120px;
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #fcfdfe;
-  color: #1e293b;
-  font-size: 0.9375rem;
-  font-family: inherit;
-  resize: vertical;
-  transition: all 0.2s;
-  line-height: 1.6;
-}
-.factory-notes-textarea:focus {
-  border-color: #0ea5e9;
-  outline: none;
+.fab-cancel {
   background: white;
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.05);
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  width: 44px;
+  height: 44px;
+}
+.fab-save {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  width: 60px;
+  height: 60px;
 }
 
-.admin-save-footer {
-  margin: 1.5rem 0 3rem;
+@media (min-width: 768px) {
+  .floating-save-container { flex-direction: row; justify-content: space-between; }
+  .order-detail-view { padding-bottom: 100px; } /* Create space for floating bar */
+  .mobile-fab-container { display: none !important; }
+}
+@media (max-width: 767px) {
+  .order-detail-view { padding-bottom: 80px; }
+  .floating-save-bar.desktop-save-bar { display: none !important; }
 }
 
+.saas-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.saas-table th { padding: 1rem; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; border-bottom: 1px solid #f1f5f9; }
+.saas-table td { padding: 1rem; font-size: 0.875rem; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+.badge-blue { background: #f0f9ff; color: #0ea5e9; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.75rem; }
+
+/* Chat Bubbles */
+.message-bubble { max-width: 80%; padding: 1rem 1.25rem; border-radius: 16px; margin-bottom: 0.5rem; position: relative; }
+.my-msg { align-self: flex-end; background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; border-bottom-right-radius: 4px; margin-left: auto; }
+.their-msg { align-self: flex-start; background: white; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+.bubble-sender { font-size: 0.7rem; font-weight: 800; margin-bottom: 0.25rem; opacity: 0.8; }
+.bubble-text { font-size: 0.9375rem; line-height: 1.5; font-weight: 500;}
+.bubble-time { font-size: 0.65rem; text-align: right; margin-top: 0.5rem; opacity: 0.7; font-weight: 600; }
+
+.fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsive Optimizations */
 @media (max-width: 768px) {
-  .admin-form-grid {
-    grid-template-columns: 1fr;
+  .order-detail-view {
+    padding: 1rem 4%;
   }
-  .header-actions {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  .spec-row {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-}
-</style>
 
+  .page-top-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .header-left { width: 100%; }
+  .mobile-only-title {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #0f172a;
+    margin-top: 0.5rem;
+  }
+  .profile-card .auth-title { display: none; } /* Hide duplicate title in sidebar on mobile */
+
+  .breadcrumb-mini { gap: 0.75rem; }
+  .back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    color: #0ea5e9;
+  }
+
+  .actions-right {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .actions-right button, .editing-actions {
+    width: 100% !important;
+    display: flex;
+    justify-content: center;
+  }
+  .editing-actions { gap: 10px; }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .saas-tabs-nav {
+    margin: 0 -4% 1.5rem;
+    padding: 0.5rem;
+    border-radius: 0;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    scrollbar-width: none;
+  }
+  .saas-tabs-nav::-webkit-scrollbar { display: none; }
+  
+  .saas-tabs-nav button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8125rem;
+    min-width: 100px;
+  }
+
+  .info-grid, .edit-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dynamic-row {
+    flex-direction: column;
+    align-items: stretch;
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+  }
+  .dynamic-row input { width: 100% !important; }
+  .btn-delete { width: 100%; margin-top: 0.5rem; }
+
+  .message-bubble { max-width: 92%; }
+  
+  .saas-card { padding: 1.25rem; }
+}
+
+@media (min-width: 769px) {
+  .mobile-only-title { display: none; }
+}
+
+.header-left { display: flex; flex-direction: column; }
+.active-code { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 800; color: #64748b; }
+.editing-actions { display: flex; gap: 10px; width: auto; }
+</style>

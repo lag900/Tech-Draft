@@ -8,16 +8,29 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderImage;
 use App\Models\OrderStatusHistory;
+use App\Services\OrderTechPackService;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    protected $techPackService;
+
+    public function __construct(OrderTechPackService $techPackService)
+    {
+        $this->techPackService = $techPackService;
+    }
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Order::forUser($user)->with(['client', 'category', 'creator', 'images', 'production', 'statusHistory' => function($q) {
-            $q->latest()->limit(1);
-        }]);
+        $query = Order::forUser($user)
+            ->select([
+                'id', 'order_code', 'title', 'client_id', 'category_id', 'status', 
+                'created_by', 'season', 'year', 'fabric_details', 'production_details', 'created_at'
+            ])
+            ->with(['client', 'category', 'creator', 'statusHistory' => function($q) {
+                $q->latest()->limit(1);
+            }]);
 
         // Search & Filtering
         if ($search = $request->input('search')) {
@@ -35,19 +48,26 @@ class OrderController extends Controller
             $query->where('fabric_details->type', 'LIKE', "%{$fabric}%");
         }
 
-        if ($perPage = $request->input('per_page')) {
-            return $query->latest()->paginate($perPage);
+        if ($status = $request->input('status')) {
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
         }
 
-        return $query->latest()->get();
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
+
+        return $query->latest()->paginate($perPage);
     }
 
     public function export(Request $request)
     {
         $user = $request->user();
-        $query = Order::forUser($user)->with(['client', 'category']);
-
-        $orders = $query->latest()->get();
+        $orders = Order::forUser($user)
+            ->select(['id', 'order_code', 'title', 'client_id', 'category_id', 'season', 'year', 'status', 'created_at'])
+            ->with(['client:id,brand_name', 'category:id,name'])
+            ->latest()
+            ->get();
 
         $filename = "orders_" . date('Y-m-d_H-i-s') . ".csv";
         $headers = [
@@ -202,10 +222,20 @@ class OrderController extends Controller
         if (!empty($order->measurements) && is_array($order->measurements)) {
             foreach ($order->measurements as $measure) {
                 if (isset($measure['point']) && isset($measure['value'])) {
+                    $val = $measure['value'];
+                    if (is_array($val)) continue;
+                    if (is_string($val)) {
+                        $trimmed = ltrim($val);
+                        if (Str::startsWith($trimmed, '[') || Str::startsWith($trimmed, '{')) continue;
+                    }
+                    $numericVal = ($val !== null && $val !== '')
+                        ? (float) filter_var($val, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)
+                        : 0.0;
+
                     \App\Models\OrderMeasurement::create([
                         'order_id' => $order->id,
                         'point_of_measure' => $measure['point'],
-                        'dimension_value' => $measure['value'],
+                        'dimension_value' => $numericVal,
                         'unit' => $measure['unit'] ?? 'cm',
                     ]);
                 }
@@ -237,6 +267,7 @@ class OrderController extends Controller
         return $order->load(['images', 'orderColors', 'orderSizes', 'orderMeasurements']);
     }
 
+
     public function show(Order $order)
     {
         $user = request()->user();
@@ -244,7 +275,25 @@ class OrderController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        return $order->load(['client', 'category', 'creator', 'images', 'production', 'messages.sender', 'anatomies', 'markerPlans', 'statusHistory', 'orderColors', 'orderSizes', 'orderMeasurements', 'orderVariants']);
+        $order->load(['client', 'category', 'creator', 'images', 'production', 'messages.sender', 'anatomies', 'markerPlans', 'statusHistory', 'orderColors', 'orderSizes', 'orderMeasurements', 'orderVariants']);
+        
+        $orderData = $order->toArray();
+        $orderData['model_anatomy'] = $order->anatomies;
+        
+        $marker = $order->markerPlans->first();
+        if ($marker) {
+            $orderData['marker_length'] = $marker->marker_length;
+            $orderData['fabric_width'] = $marker->fabric_width;
+            $orderData['parts_count'] = $marker->part_count; // standardizing DB column
+            $orderData['efficiency'] = $marker->efficiency;
+        } else {
+            $orderData['marker_length'] = null;
+            $orderData['fabric_width'] = null;
+            $orderData['parts_count'] = null;
+            $orderData['efficiency'] = null;
+        }
+
+        return response()->json($orderData);
     }
 
 
@@ -260,48 +309,76 @@ class OrderController extends Controller
             'status' => 'required|string|in:draft,submitted,pending,technical_ready,in_review,sampling,approved,production,completed,cancelled',
         ]);
 
-        if ($user->role === 'admin' || $user->role === 'manager') {
-            $data = $request->all();
-            
-            // Handle JSON strings if sent from FormData
-            if (is_string($data['fabric_details'] ?? null)) $data['fabric_details'] = json_decode($data['fabric_details'], true);
-            if (is_string($data['colors'] ?? null)) $data['colors'] = json_decode($data['colors'], true);
-            if (is_string($data['measurements'] ?? null)) $data['measurements'] = json_decode($data['measurements'], true);
-            if (is_string($data['production_details'] ?? null)) $data['production_details'] = json_decode($data['production_details'], true);
+        try {
+            $oldStatus = $order->status;
+            $newStatus = $request->status;
 
-            $order->update($data);
+            if ($oldStatus !== $newStatus) {
+                $order->update(['status' => $newStatus]);
 
-            // Sync Structured Data if provided
-            if (isset($data['measurements']) && is_array($data['measurements'])) {
-                $order->orderMeasurements()->delete();
-                foreach ($data['measurements'] as $measure) {
-                    if (isset($measure['point']) && isset($measure['value'])) {
-                        \App\Models\OrderMeasurement::create([
-                            'order_id' => $order->id,
-                            'point_of_measure' => $measure['point'],
-                            'dimension_value' => $measure['value'],
-                            'unit' => $measure['unit'] ?? 'cm',
-                        ]);
+                OrderStatusHistory::create([
+                    'order_id' => $order->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'changed_by' => $user->id,
+                ]);
+            }
+
+            if ($user->role === 'admin' || $user->role === 'manager') {
+                $data = $request->all();
+                
+                // Handle JSON decoding for multi-part requests
+                foreach(['fabric_details', 'colors', 'measurements', 'production_details'] as $field) {
+                    if (is_string($data[$field] ?? null)) {
+                        $decoded = json_decode($data[$field], true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $data[$field] = $decoded;
+                        }
+                    }
+                }
+
+                $order->update($data);
+
+                // Sync Normalized Measurements if provided
+                if (isset($data['measurements']) && is_array($data['measurements'])) {
+                    $order->orderMeasurements()->delete();
+                    foreach ($data['measurements'] as $m) {
+                        $val = $m['value'] ?? $m['dimension_value'] ?? 0;
+                        if (is_array($val)) continue;
+                        if (is_string($val)) {
+                            $trimmed = ltrim($val);
+                            if (Str::startsWith($trimmed, '[') || Str::startsWith($trimmed, '{')) continue;
+                        }
+                        if (is_numeric($val) || (is_string($val) && !empty($val))) {
+                            // Strip unit 'cm', 'in' etc and parse float
+                            $numericVal = (float) filter_var($val, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                            
+                            $order->orderMeasurements()->create([
+                                'point_of_measure' => $m['point'] ?? $m['name'] ?? 'Unknown',
+                                'dimension_value' => $numericVal,
+                                'unit' => $m['unit'] ?? 'cm',
+                                'grading' => isset($m['grading']) && is_array($m['grading']) ? $m['grading'] : null,
+                                'tolerance' => $m['tol'] ?? $m['tolerance'] ?? null
+                            ]);
+                        }
                     }
                 }
             }
-        }
 
-        $oldStatus = $order->status;
-        $newStatus = $request->status;
-
-        if ($oldStatus !== $newStatus) {
-            $order->update(['status' => $newStatus]);
-
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'old_status' => $oldStatus,
-                'new_status' => $newStatus,
-                'changed_by' => $request->user()->id,
+            return response()->json([
+                'success' => true,
+                'message' => 'Order updated successfully',
+                'order' => $order->fresh(['orderMeasurements'])
             ]);
-        }
 
-        return $order;
+        } catch (\Exception $e) {
+            Log::error('Order Update Error: ' . $e->getMessage(), ['order_id' => $order->id]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update order details.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 
     public function updateStatus(Request $request, Order $order)
@@ -341,5 +418,215 @@ class OrderController extends Controller
         }
 
         return "ORD-{$year}-" . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+    }
+
+    public function getTechPack(Request $request, Order $order)
+    {
+        $user = $request->user();
+        if ($user->role === 'client' && $order->client?->user_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return response()->json($this->techPackService->getFullOrderData($order->id));
+    }
+
+    public function saveTechPack(Request $request, Order $order)
+    {
+        $user = $request->user();
+        if (!$user || !in_array($user->role, ['admin', 'superadmin', 'manager'])) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            $data = $request->validate([
+                'fabric' => 'nullable|array',
+                'trims' => 'nullable|array',
+                'stitch' => 'nullable|array',
+                'labels' => 'nullable|array',
+                'marker' => 'nullable|array',
+                'packaging' => 'nullable|array',
+                'steps' => 'nullable|array',
+                'parts' => 'nullable|array',
+                'measurements' => 'nullable|array',
+                'notes' => 'nullable|string',
+                'detail_zoom' => 'nullable|string'
+            ]);
+            // 0. Pre-process Uploaded Images (Base64 to Physical Storage Paths)
+            // This prevents DB limit crashes 'Data too long' and PDF layout issues.
+            if (isset($data['detail_zoom']) && is_string($data['detail_zoom']) && str_starts_with($data['detail_zoom'], 'data:image')) {
+                $file_data = explode(',', $data['detail_zoom']);
+                if (count($file_data) > 1) {
+                    $imgName = 'models/' . uniqid('zoom_') . '.png';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($imgName, base64_decode($file_data[1]));
+                    $data['detail_zoom'] = $imgName;
+                }
+            }
+
+            if (isset($data['parts']) && is_array($data['parts'])) {
+                foreach ($data['parts'] as &$p) {
+                    if (isset($p['img']) && is_string($p['img']) && str_starts_with($p['img'], 'data:image')) {
+                        $file_data = explode(',', $p['img']);
+                        if (count($file_data) > 1) {
+                            $imgName = 'models/' . uniqid('anatomy_') . '.png';
+                            \Illuminate\Support\Facades\Storage::disk('public')->put($imgName, base64_decode($file_data[1]));
+                            $p['img'] = $imgName;
+                        } else {
+                            $p['img'] = null;
+                        }
+                    }
+                }
+            }
+
+            // 1. Primary Save to JSON field (Now safe since images are Paths)
+            $order->update(['tech_pack' => $data]);
+
+            // 2. Sync to Normalized Tables with Data Cleaning
+
+            // A. Measurements
+            // IMPORTANT: Only save entries with a real numeric value to the normalized table.
+            // Entries like "breakdown" whose value is a JSON array are size-distribution data,
+            // not dimensions — they are already stored in the tech_pack JSON column above.
+            if (!empty($data['measurements']) && is_array($data['measurements'])) {
+                $order->orderMeasurements()->delete();
+                foreach ($data['measurements'] as $m) {
+                    $point = trim($m['point'] ?? '');
+                    if (empty($point)) continue;
+
+                    $val = $m['value'] ?? null;
+
+                    // Skip non-numeric values entirely — these are JSON payloads, not dimensions.
+                    if (is_array($val)) continue;
+                    if (is_string($val)) {
+                        $trimmed = ltrim($val);
+                        if (Str::startsWith($trimmed, '[') || Str::startsWith($trimmed, '{')) continue;
+                    }
+
+                    // Extract numeric value (handles "32 cm" -> 32.0)
+                    $numericVal = ($val !== null && $val !== '')
+                        ? (float) filter_var($val, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)
+                        : 0.0;
+
+                    // Tolerance: must be numeric or null
+                    $tol = $m['tol'] ?? $m['tolerance'] ?? null;
+                    if ($tol !== null && !is_numeric($tol)) {
+                        $tol = (float) filter_var($tol, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+                    }
+
+                    $order->orderMeasurements()->create([
+                        'point_of_measure' => $point,
+                        'dimension_value'  => $numericVal,
+                        'unit'             => $m['unit'] ?? 'cm',
+                        'grading'          => isset($m['grading']) && is_array($m['grading']) ? $m['grading'] : null,
+                        'tolerance'        => $tol,
+                    ]);
+                }
+            }
+
+            // B. Model Anatomy
+            if (isset($data['parts']) && is_array($data['parts'])) {
+                $order->anatomies()->delete();
+                foreach ($data['parts'] as $p) {
+                    $piece = $p['piece'] ?? null;
+                    $part = $p['part'] ?? null;
+                    if ($piece || $part) {
+                        $imgPath = $p['img'] ?? null;
+
+                        $order->anatomies()->create([
+                            'piece_name' => $piece ?? '',
+                            'part_name' => $part ?? '',
+                            'count' => (int) ($p['qty'] ?? 1),
+                            'image_path' => (is_string($imgPath) && strlen($imgPath) <= 255) ? $imgPath : null
+                        ]);
+                    }
+                }
+            }
+
+            // C. Marker Plan
+            if (isset($data['marker']) && is_array($data['marker'])) {
+                $m = $data['marker'];
+                $order->markerPlans()->updateOrCreate(
+                    ['order_id' => $order->id],
+                    [
+                        'marker_length' => isset($m['length']) ? (float) filter_var($m['length'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null,
+                        'marker_width' => isset($m['width']) ? (float) filter_var($m['width'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null,
+                        'fabric_width' => isset($m['fabric_width']) ? (float) filter_var($m['fabric_width'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null, // Use specific fabric_width if available
+                        'efficiency' => isset($m['eff']) ? (float) filter_var($m['eff'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null,
+                        'part_count' => (int) ($m['parts'] ?? 0)
+                    ]
+                );
+            }
+
+            // D. Production Table
+            $fabric = $data['fabric'] ?? [];
+            $trims = $data['trims'] ?? [];
+            $stitch = $data['stitch'] ?? [];
+            $labels = $data['labels'] ?? [];
+            $packaging = $data['packaging'] ?? [];
+
+            $order->production()->updateOrCreate(
+                ['order_id' => $order->id],
+                [
+                    'fabric_code' => $fabric['code'] ?? null,
+                    'fabric_supplier' => $fabric['supplier'] ?? null,
+                    'fabric_width' => isset($fabric['width']) ? (float) filter_var($fabric['width'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) : null,
+                    'dye_method' => $fabric['dye'] ?? null,
+                    'fabric_finish' => $fabric['finish'] ?? null,
+                    'zipper_type' => $trims['zipper'] ?? null,
+                    'button_type' => $trims['button'] ?? null,
+                    'cord_type' => $trims['cord'] ?? null,
+                    'rib_type' => $trims['rib'] ?? null,
+                    'thread_type' => $trims['thread'] ?? null,
+                    'stitch_type' => $stitch['stitch'] ?? null,
+                    'seam_type' => $stitch['seam'] ?? null,
+                    'reinforcement' => $stitch['reinforcement'] ?? null,
+                    'label_type' => $labels['main'] ?? null,
+                    'label_position' => $labels['pos'] ?? null,
+                    'packaging_type' => $packaging['type'] ?? null,
+                    'folding_method' => $packaging['fold'] ?? null,
+                    'carton_quantity' => $packaging['qty'] ?? null,
+                    'barcode_required' => (bool) ($packaging['barcode'] ?? false),
+                    'factory_notes' => $data['notes'] ?? null,
+                    'sewing_sequence' => $data['steps'] ?? []
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tech Pack data persisted successfully.',
+                'tech_pack' => $order->tech_pack
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Tech Pack Validation Error: ' . $e->getMessage(), ['order_id' => $order->id, 'errors' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed for Tech Pack data.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Tech Pack Save Error: ' . $e->getMessage(), ['order_id' => $order->id, 'trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal Server Error while persisting Tech Pack.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    public function destroy(Request $request, Order $order)
+    {
+        $user = $request->user();
+        
+        // Authorization check
+        if ($user->role === 'client' && $order->client?->user_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $order->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order deleted successfully'
+        ]);
     }
 }
