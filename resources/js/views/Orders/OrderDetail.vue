@@ -37,12 +37,6 @@
                    {{ t('Cancel', 'إلغاء') }}
                 </BaseButton>
             </div>
-<BaseButton variant="outline" @click="router.push(`/orders/create?reorder_id=${order.id}`)">
-              <template #icon-left>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              </template>
-              {{ t('Reorder', 'إعادة طلب') }}
-            </BaseButton>
         </div>
       </div>
 
@@ -103,32 +97,88 @@
            
            <!-- Tab 1: Overview -->
            <div v-show="activeTab === 'overview'" class="tab-pane fade-in">
-              <div class="saas-card mb-4">
+                     <div class="saas-card mb-4">
                  <h3 class="card-title">{{ t('Technical Specifications', 'المواصفات الفنية') }}</h3>
                  <div class="info-grid">
                     <div class="info-item">
+                        <label>{{ t('Product Code', 'كود المنتج') }}</label>
+                        <div class="val font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-sm w-max font-bold border border-slate-200 shadow-sm">{{ order.design?.product_code || order.product_code || '---' }}</div>
+                    </div>
+                    <div class="info-item">
                         <label>{{ t('Item Category', 'تصنيف القطعة') }}</label>
-                        <div class="val">{{ order.category?.name || '---' }}</div>
+                        <div class="val">{{ order.design?.category?.name || order.category?.name || '---' }}</div>
                     </div>
                     <div class="info-item">
                         <label>{{ t('Item Type', 'نوع القطعة') }}</label>
-                        <div class="val">{{ order.production_details?.item_type || '---' }}</div>
+                        <div class="val">{{ order.design?.item_type || order.production_details?.item_type || '---' }}</div>
                     </div>
                     <div class="info-item">
                         <label>{{ t('Fit / Style', 'القصة / الستايل') }}</label>
-                        <div class="val">{{ order.production_details?.fit || t('Regular', 'عادي') }}</div>
-                    </div>
-                    <div class="info-item">
-                        <label>{{ t('Sizes', 'المقاسات') }}</label>
-                        <div class="val">{{ formatSizes(order.production_details?.sizes) }}</div>
+                        <div class="val">{{ order.design?.fit || order.production_details?.fit || t('Regular', 'عادي') }}</div>
                     </div>
                  </div>
               </div>
-              
-              <div class="saas-card mb-4" v-if="order.colors && order.colors.length">
+
+              <!-- Sizes & Quantity -->
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Sizes & Quantity', 'المقاسات والكمية') }}</h3>
+                 <div class="flex gap-3 flex-wrap mb-4" v-if="(order.design?.sizes || order.order_sizes || order.production_details?.sizes)?.length">
+                     <template v-for="(sizeData, idx) in (order.design?.sizes || order.order_sizes || order.production_details?.sizes)" :key="idx">
+                         <div v-if="typeof sizeData === 'object'" class="flex items-center rounded-lg border border-slate-200 shadow-sm overflow-hidden text-sm font-bold bg-white">
+                             <div class="bg-slate-100 text-slate-700 px-3 py-1.5 border-r border-slate-200 rtl:border-r-0 rtl:border-l">{{ sizeData.size }}</div>
+                             <div class="text-blue-600 px-3 py-1.5">{{ sizeData.quantity || sizeData.qty }} {{ t('pcs', 'قطعة') }}</div>
+                         </div>
+                         <div v-else class="px-4 py-1.5 bg-white border border-slate-200 text-slate-700 font-extrabold text-xs rounded-full shadow-sm">{{ sizeData }}</div>
+                     </template>
+                 </div>
+                 <div class="val text-slate-400 mb-4" v-else>---</div>
+                 
+                 <div class="info-item pt-4 border-t border-slate-100">
+                    <label>{{ t('Total Quantity', 'إجمالي الكمية') }}</label>
+                    <div class="val text-lg font-black text-blue-600">{{ order.design?.total_quantity || order.production_details?.quantity || '---' }}</div>
+                 </div>
+              </div>
+
+              <!-- Fabric & Material -->
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Fabric & Material', 'الخامة والقماش') }}</h3>
+                 <div class="info-grid">
+                    <div class="info-item"><label>{{ t('Fabric Type', 'نوع القماش') }}</label><div class="val">{{ order.design?.fabric_type || techPack.fabric?.code || order.fabric_details?.type || order.fabric_type || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Fabric Weight', 'وزن القماش') }}</label><div class="val">{{ order.design?.fabric_weight || order.fabric_details?.weight || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Texture', 'الملمس') }}</label><div class="val">{{ order.design?.texture || order.fabric_details?.texture || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Composition', 'التركيب') }}</label><div class="val">{{ order.design?.composition || order.fabric_details?.composition || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Yarn Type', 'نوع الخيط') }}</label><div class="val">{{ order.design?.yarn_type || order.fabric_details?.yarn_type || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Structure', 'البنية') }}</label><div class="val">{{ order.design?.structure || order.fabric_details?.structure || '---' }}</div></div>
+                 </div>
+              </div>
+
+              <!-- Technical Measurements -->
+              <div class="saas-card mb-4" v-if="(order.design?.measurements || order.measurements || order.order_measurements || techPack.measurements)?.length">
+                 <h3 class="card-title">{{ t('Technical Measurements', 'القياسات الفنية') }}</h3>
+                 <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left rtl:text-right text-gray-700 border-collapse">
+                       <thead class="text-xs text-gray-500 uppercase bg-slate-50 border-b border-slate-200">
+                          <tr>
+                             <th class="px-4 py-3">{{ t('Point of Measurement', 'نقطة القياس') }}</th>
+                             <th class="px-4 py-3">{{ t('Value', 'القيمة') }}</th>
+                             <th class="px-4 py-3 text-center">{{ t('Tolerance (+/-)', 'نسبة التفاوت') }}</th>
+                          </tr>
+                       </thead>
+                       <tbody class="divide-y divide-slate-100">
+                          <tr v-for="(m, idx) in (order.design?.measurements || order.measurements || order.order_measurements || techPack.measurements)" :key="idx" class="hover:bg-slate-50/50 transition-colors">
+                             <td class="px-4 py-3 font-medium">{{ m.name || m.point || m.point_of_measure }}</td>
+                             <td class="px-4 py-3 font-bold">{{ m.value || m.dimension_value }}</td>
+                             <td class="px-4 py-3 text-center text-slate-500">{{ m.tolerance || m.tol || '---' }}</td>
+                          </tr>
+                       </tbody>
+                    </table>
+                 </div>
+              </div>
+
+              <div class="saas-card mb-4" v-if="order.design?.colors || (order.colors && order.colors.length)">
                  <h3 class="card-title">{{ t('Color Palette', 'لوحة الألوان') }}</h3>
                  <div class="colors-flex">
-                    <div v-for="(color, idx) in order.colors" :key="idx" class="color-item shadow-sm">
+                    <div v-for="(color, idx) in (order.design?.colors || order.colors)" :key="idx" class="color-item shadow-sm">
                       <div class="color-circle" :style="{ background: color.hex }"></div>
                       <div class="color-meta">
                          <div class="hex">{{ color.name || color.hex }}</div>
@@ -138,16 +188,45 @@
                  </div>
               </div>
               
-              <div class="saas-card mb-4" v-if="order.images && order.images.length">
-                 <h3 class="card-title">{{ t('Design Visuals', 'صور التصميم') }}</h3>
+              <div class="saas-card mb-4" v-if="(order.images && order.images.length) || order.design?.front_view || order.design_front_image || order.design?.back_view || order.design_back_image || order.design?.technical_sketch || order.technical_sketch">
+                 <h3 class="card-title">{{ t('Design Files', 'ملفات التصميم') }}</h3>
                  <div class="gallery-grid">
-                     <div v-for="img in order.images" :key="img.id" class="gallery-img-box" @click="zoomImage(img.file_path)">
-                        <img :src="'/storage/' + img.file_path" alt="design">
-                        <div class="img-overlay">
-                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                        </div>
+                     <div v-if="order.design?.front_view || order.design_front_image" class="gallery-img-box relative" @click="zoomImage(order.design?.front_view || order.design_front_image)">
+                        <img :src="'/storage/' + (order.design?.front_view || order.design_front_image)" alt="Front">
+                        <div class="img-badge">{{ t('Front View', 'عرض أمامي') }}</div>
+                        <div class="img-overlay"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>
+                     </div>
+                     <div v-if="order.design?.back_view || order.design_back_image" class="gallery-img-box relative" @click="zoomImage(order.design?.back_view || order.design_back_image)">
+                        <img :src="'/storage/' + (order.design?.back_view || order.design_back_image)" alt="Back">
+                        <div class="img-badge">{{ t('Back View', 'عرض خلفي') }}</div>
+                        <div class="img-overlay"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>
+                     </div>
+                     <div v-if="order.design?.technical_sketch || order.technical_sketch" class="gallery-img-box relative" @click="zoomImage(order.design?.technical_sketch || order.technical_sketch)">
+                        <img :src="'/storage/' + (order.design?.technical_sketch || order.technical_sketch)" alt="Sketch">
+                        <div class="img-badge">{{ t('Technical Sketch', 'مخطط فني') }}</div>
+                        <div class="img-overlay"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>
+                     </div>
+                     
+                     <div v-for="img in order.images" :key="img.id" class="gallery-img-box relative" @click="zoomImage(img.file_path)">
+                        <img :src="'/storage/' + img.file_path" alt="Reference">
+                        <div class="img-overlay"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></div>
                      </div>
                  </div>
+              </div>
+
+              <div class="saas-card mb-4">
+                 <h3 class="card-title">{{ t('Branding Requirements', 'متطلبات العلامة التجارية') }}</h3>
+                 <div class="info-grid">
+                    <div class="info-item"><label>{{ t('Main Label', 'الليبل الرئيسي') }}</label><div class="val font-medium text-slate-700">{{ order.design?.main_label || order.main_label_type || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Care Label', 'ليبل العناية') }}</label><div class="val font-medium text-slate-700">{{ order.design?.care_label || order.care_label_type || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Size Label', 'ليبل المقاس') }}</label><div class="val font-medium text-slate-700">{{ order.design?.size_label || order.size_label_type || '---' }}</div></div>
+                    <div class="info-item"><label>{{ t('Hangtag', 'هانج تاج') }}</label><div class="val font-medium text-slate-700">{{ order.design?.hang_tag || order.hangtag_type || '---' }}</div></div>
+                 </div>
+              </div>
+
+              <div class="saas-card mb-4" v-if="order.design?.notes || order.notes || order.factory_notes">
+                 <h3 class="card-title">{{ t('Notes / Instructions', 'الملاحظات والتعليمات') }}</h3>
+                 <div class="leading-relaxed text-[13px] font-bold text-slate-700 bg-slate-50 p-5 rounded-xl border border-slate-100 whitespace-pre-line">{{ order.design?.notes || order.notes || order.factory_notes }}</div>
               </div>
            </div>
            
@@ -1152,6 +1231,23 @@ const zoomImage = (path) => window.open('/storage/' + path, '_blank');
 .color-circle { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .color-meta .hex { font-size: 0.8125rem; font-weight: 800; color: #1e293b; margin-bottom: 2px; }
 .color-meta .pantone { font-size: 0.7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+
+/* CSS Added for visuals */
+.img-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
 .gallery-img-box { position: relative; aspect-ratio: 1; border-radius: 16px; overflow: hidden; cursor: pointer; border: 1px solid #e2e8f0; }

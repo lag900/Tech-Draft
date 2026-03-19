@@ -15,4 +15,18 @@ export default defineConfig({
             ignored: ['**/storage/framework/views/**'],
         },
     },
+    build: {
+        chunkSizeWarningLimit: 1600,
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('html2pdf.js') || id.includes('jspdf') || id.includes('html2canvas')) {
+                            return 'pdf-vendor';
+                        }
+                    }
+                }
+            }
+        }
+    }
 });

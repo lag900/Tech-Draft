@@ -93,6 +93,7 @@
                       <th class="w-[240px] px-6 py-4 text-start align-middle">{{ t('Product / Brand', 'المنتج / البراند') }}</th>
                       <th v-if="user?.role !== 'client'" class="w-[200px] px-6 py-4 text-start align-middle">{{ t('Client', 'العميل') }}</th>
                       <th class="w-[160px] px-6 py-4 text-start align-middle">{{ t('Category', 'التصنيف') }}</th>
+                      <th class="w-[180px] px-6 py-4 text-start align-middle">{{ t('Material', 'الخامة') }}</th>
                       <th class="w-[180px] px-6 py-4 text-center align-middle">{{ t('Status', 'الحالة') }}</th>
                       <th class="w-[180px] px-6 py-4 text-end align-middle">{{ t('Actions', 'الإجراءات') }}</th>
                     </tr>
@@ -142,6 +143,18 @@
                         <span class="category-tag">
                           {{ order.category?.name || '---' }}
                         </span>
+                      </td>
+
+                      <!-- Material Column -->
+                      <td class="px-6 py-5 align-middle text-start">
+                        <div class="flex flex-col min-w-0">
+                          <span class="text-sm font-bold text-slate-700 truncate max-w-[150px]" :title="order.fabric_details?.type || order.fabric_type">
+                            {{ order.fabric_details?.type || order.fabric_type || '---' }}
+                          </span>
+                          <span class="text-xs text-slate-400 font-medium mt-1 truncate max-w-[150px]" :title="order.notes">
+                            {{ order.notes || '---' }}
+                          </span>
+                        </div>
                       </td>
 
                       <!-- Status Column -->
@@ -235,9 +248,15 @@
                     <span class="label !text-[9px] !mb-1 text-slate-400 font-black uppercase">{{ t('Established', 'تاريخ الإنشاء') }}</span>
                     <span class="value text-[13px] font-black text-slate-700 block">{{ formatTime(order.created_at) }}</span>
                   </div>
-                  <div class="info-item col-span-2 pt-2 border-t border-slate-100 mt-1">
-                    <span class="label !text-[9px] !mb-1 text-slate-400 font-black uppercase">{{ t('Category', 'التصنيف') }}</span>
-                    <span class="category-tag-v3">{{ order.category?.name || '---' }}</span>
+                  <div class="info-item col-span-2 pt-2 border-t border-slate-100 mt-1 flex justify-between gap-4">
+                    <div>
+                        <span class="label !text-[9px] !mb-1 text-slate-400 font-black uppercase">{{ t('Category', 'التصنيف') }}</span>
+                        <span class="category-tag-v3">{{ order.category?.name || '---' }}</span>
+                    </div>
+                    <div>
+                        <span class="label !text-[9px] !mb-1 text-slate-400 font-black uppercase">{{ t('Material', 'الخامة') }}</span>
+                        <span class="text-[12px] font-bold text-slate-700 truncate block max-w-[120px]">{{ order.fabric_details?.type || order.fabric_type || '---' }}</span>
+                    </div>
                   </div>
                 </div>
 

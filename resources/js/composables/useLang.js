@@ -25,12 +25,8 @@ watch(currentLocale, async (newLang) => {
     // Persist
     localStorage.setItem('lang', newLang);
     
-    // Sync with Laravel server
-    try {
-        await axios.post('/api/language/switch', { lang: newLang });
-    } catch (e) {
-        console.error('Failed to sync locale with Laravel', e);
-    }
+    // Sync with Laravel server (Removed non-existent endpoint to fix 405 error)
+    // You can re-enable this later when backend endpoint exists
 }, { immediate: true });
 
 /**
