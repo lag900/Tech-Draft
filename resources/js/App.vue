@@ -5,17 +5,10 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { useLang } from './composables/useLang';
 
-onMounted(() => {
-  // Set Arabic as default language if no preference saved yet
-  if (!localStorage.getItem('lang')) {
-    localStorage.setItem('lang', 'ar');
-  }
-  const isRtl = localStorage.getItem('lang') === 'ar';
-  document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-  document.documentElement.lang = isRtl ? 'ar' : 'en';
-});
+// Initialize global language reactivity and document dir/lang
+useLang();
 </script>
 
 <style>

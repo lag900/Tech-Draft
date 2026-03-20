@@ -46,6 +46,7 @@
 </template>
 
 <script setup>
+import { useLang } from '../composables/useLang';
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
@@ -54,22 +55,14 @@ const router = useRouter();
 const loading = ref(false);
 const showPassword = ref(false);
 const error = ref('');
-// Default to Arabic
-if (!localStorage.getItem('lang')) localStorage.setItem('lang', 'ar');
-const isRtl = ref(localStorage.getItem('lang') === 'ar');
-
-const t = (en, ar) => isRtl.value ? ar : en;
+const { isRtl, t, toggleLang } = useLang();
 
 const form = reactive({
   email: '',
   password: ''
 });
 
-const toggleLang = () => {
-  isRtl.value = !isRtl.value;
-  localStorage.setItem('lang', isRtl.value ? 'ar' : 'en');
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
-};
+// toggleLang handled by useLang
 
 const login = async () => {
   loading.value = true;
@@ -108,9 +101,7 @@ const login = async () => {
   }
 };
 
-onMounted(() => {
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
-});
+// init handled by useLang
 </script>
 
 <style scoped>

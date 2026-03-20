@@ -316,6 +316,7 @@
 </template>
 
 <script setup>
+import { useLang } from '../composables/useLang';
 import Layout from '../components/Layout.vue';
 import BaseCard from '../components/UI/BaseCard.vue';
 import BaseButton from '../components/UI/BaseButton.vue';
@@ -367,8 +368,7 @@ const showAlert = (message, title = '', type = 'info') => {
 const catDropdownRef = ref(null);
 const typeDropdownRef = ref(null);
 
-const isRtl = computed(() => localStorage.getItem('lang') === 'ar');
-const t = (en, ar) => isRtl.value ? ar : en;
+const { isRtl, t } = useLang();
 
 const headers = { Authorization: `Bearer ${localStorage.getItem('auth_token')}` };
 

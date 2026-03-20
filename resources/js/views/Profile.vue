@@ -95,6 +95,7 @@
 </template>
 
 <script setup>
+import { useLang } from '../composables/useLang';
 import Layout from '../components/Layout.vue';
 import BaseCard from '../components/UI/BaseCard.vue';
 import BaseButton from '../components/UI/BaseButton.vue';
@@ -105,8 +106,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import axios from 'axios';
 
 const user = ref(JSON.parse(localStorage.getItem('user') || '{}'));
-const isRtl = computed(() => localStorage.getItem('lang') === 'ar');
-const t = (en, ar) => isRtl.value ? ar : en;
+const { isRtl, t } = useLang();
 
 const loading = ref(false);
 const passLoading = ref(false);

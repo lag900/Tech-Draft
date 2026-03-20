@@ -118,6 +118,7 @@
 </template>
 
 <script setup>
+import { useLang } from '../../composables/useLang';
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
@@ -130,8 +131,7 @@ const route = useRoute();
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
 const can = (perm) => hasPermission(user.value, perm);
-const isRtl = computed(() => localStorage.getItem('lang') === 'ar');
-const t = (en, ar) => isRtl.value ? ar : en;
+const { isRtl, t } = useLang();
 
 const loading = ref(true);
 const design = ref(null);

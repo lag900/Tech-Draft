@@ -169,20 +169,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 
+import { useLang } from '../composables/useLang';
+
 const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
-const isRtl = ref(localStorage.getItem('lang') === 'ar');
+const { isRtl, t, toggleLang } = useLang();
 
 const logout = () => {
   localStorage.clear();
   window.location.reload();
-};
-
-const t = (en, ar) => isRtl.value ? ar : en;
-
-const toggleLang = () => {
-  isRtl.value = !isRtl.value;
-  localStorage.setItem('lang', isRtl.value ? 'ar' : 'en');
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
 };
 
 const handleLogoError = (e) => {
@@ -190,9 +184,7 @@ const handleLogoError = (e) => {
   e.target.style.display = 'none';
 };
 
-onMounted(() => {
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
-});
+// Initialization handled by useLang
 </script>
 
 <style scoped>

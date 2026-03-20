@@ -94,6 +94,7 @@
 </template>
 
 <script setup>
+import { useLang } from '../composables/useLang';
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
@@ -105,10 +106,7 @@ const loading = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const error = ref('');
-if (!localStorage.getItem('lang')) localStorage.setItem('lang', 'ar');
-const isRtl = ref(localStorage.getItem('lang') === 'ar');
-
-const t = (en, ar) => isRtl.value ? ar : en;
+const { isRtl, t, toggleLang } = useLang();
 
 const localizedCountries = computed(() => {
   return countries.map(c => ({
@@ -129,11 +127,7 @@ const form = reactive({
   password_confirmation: ''
 });
 
-const toggleLang = () => {
-  isRtl.value = !isRtl.value;
-  localStorage.setItem('lang', isRtl.value ? 'ar' : 'en');
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
-};
+// Toggle handled by useLang
 
 const register = async () => {
   loading.value = true;
@@ -156,9 +150,7 @@ const register = async () => {
   }
 };
 
-onMounted(() => {
-  document.documentElement.dir = isRtl.value ? 'rtl' : 'ltr';
-});
+// Init handled by useLang
 </script>
 
 <style scoped>
