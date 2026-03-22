@@ -184,13 +184,14 @@
               class="perm-pill"
               :class="{
                 granted: isChecked(selectedRole, module.key, action.key),
-                disabled: selectedRole === 'superadmin',
+                disabled: selectedRole === 'superadmin' || !isActionAllowed(action),
+                locked: !isActionAllowed(action),
               }"
             >
               <input
                 type="checkbox"
                 :checked="isChecked(selectedRole, module.key, action.key)"
-                :disabled="selectedRole === 'superadmin'"
+                :disabled="selectedRole === 'superadmin' || !isActionAllowed(action)"
                 @change="toggleCheck(selectedRole, module.key, action.key)"
               />
               <div class="perm-pill-inner">
@@ -199,9 +200,26 @@
                   <span class="perm-label">{{ t(action.label, action.labelAr) }}</span>
                   <code class="perm-key">{{ module.key }}.{{ action.key }}</code>
                 </div>
-                <span class="perm-check">
+
+                <span class="action-lvl-badge" :class="getLevelBadge(action.level).class">
+                  {{ t(getLevelBadge(action.level).label, getLevelBadge(action.level).labelAr) }}
+                </span>
+
+                <span class="perm-check" :class="{ 'is-locked': !isActionAllowed(action) }">
                   <svg
-                    v-if="isChecked(selectedRole, module.key, action.key)"
+                    v-if="!isActionAllowed(action)"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  <svg
+                    v-else-if="isChecked(selectedRole, module.key, action.key)"
                     width="14"
                     height="14"
                     viewBox="0 0 24 24"
@@ -267,7 +285,7 @@
   import { useLang } from '../../composables/useLang';
   import Layout from '../../components/Layout.vue';
   import BaseButton from '../../components/UI/BaseButton.vue';
-  import { ROLES, hasPermission, refreshUserPermissions } from '../../utils/permissions';
+  import { ROLES, ROLE_INFO, hasPermission, refreshUserPermissions } from '../../utils/permissions';
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
@@ -290,13 +308,13 @@
 
   /* ─── Shared action list ─── */
   const standardActions = [
-    { key: 'view', label: 'View', labelAr: 'عرض', icon: '👁️' },
-    { key: 'create', label: 'Create', labelAr: 'إنشاء', icon: '➕' },
-    { key: 'edit', label: 'Edit', labelAr: 'تعديل', icon: '✏️' },
-    { key: 'delete', label: 'Delete', labelAr: 'حذف', icon: '🗑️' },
-    { key: 'export', label: 'Export', labelAr: 'تصدير', icon: '📤' },
-    { key: 'import', label: 'Import', labelAr: 'استيراد', icon: '📥' },
-    { key: 'approve', label: 'Approve', labelAr: 'اعتماد', icon: '✅' },
+    { key: 'view', label: 'View', labelAr: 'عرض', icon: '👁️', level: 10 },
+    { key: 'create', label: 'Create', labelAr: 'إنشاء', icon: '➕', level: 50 },
+    { key: 'edit', label: 'Edit', labelAr: 'تعديل', icon: '✏️', level: 50 },
+    { key: 'export', label: 'Export', labelAr: 'تصدير', icon: '📤', level: 60 },
+    { key: 'import', label: 'Import', labelAr: 'استيراد', icon: '📥', level: 80 },
+    { key: 'approve', label: 'Approve', labelAr: 'اعتماد', icon: '✅', level: 80 },
+    { key: 'delete', label: 'Delete', labelAr: 'حذف', icon: '🗑️', level: 90 },
   ];
 
   /* ─── Module definitions with icons ─── */
@@ -307,7 +325,7 @@
       labelAr: 'لوحة التحكم',
       icon: '📊',
       color: '#6366f1',
-      actions: [{ key: 'view', label: 'View', labelAr: 'عرض', icon: '👁️' }],
+      actions: [{ key: 'view', label: 'View', labelAr: 'عرض', icon: '👁️', level: 10 }],
     },
     {
       key: 'orders',
@@ -424,6 +442,25 @@
     );
   });
 
+  /* ─── Action Levels ─── */
+  const getSelectedRoleLevel = () => {
+    const roleObj = dynamicRoles.value.find((r) => r.slug === selectedRole.value);
+    return roleObj?.level || ROLE_INFO[selectedRole.value]?.level || 0;
+  };
+
+  const isActionAllowed = (action) => {
+    if (selectedRole.value === 'superadmin') return true;
+    return getSelectedRoleLevel() >= (action.level || 10);
+  };
+
+  const getLevelBadge = (level) => {
+    const lvl = level || 10;
+    if (lvl <= 40) return { label: 'Low', labelAr: 'منخفض', class: 'lvl-low' };
+    if (lvl <= 70) return { label: 'Mid', labelAr: 'متوسط', class: 'lvl-med' };
+    if (lvl <= 90) return { label: 'High', labelAr: 'مرتفع', class: 'lvl-high' };
+    return { label: 'Crit', labelAr: 'حرج', class: 'lvl-crit' };
+  };
+
   /* ─── Permission helpers ─── */
   const isChecked = (roleSlug, module, action) => {
     if (roleSlug === ROLES.SUPER_ADMIN) return true;
@@ -445,7 +482,9 @@
   const isAllGranted = (moduleKey) => {
     const module = moduleDefinitions.find((m) => m.key === moduleKey);
     if (!module) return false;
-    return module.actions.every((a) => isChecked(selectedRole.value, moduleKey, a.key));
+    const allowedActions = module.actions.filter((a) => isActionAllowed(a));
+    if (allowedActions.length === 0) return false;
+    return allowedActions.every((a) => isChecked(selectedRole.value, moduleKey, a.key));
   };
 
   const toggleGrantAll = (moduleKey) => {
@@ -454,6 +493,7 @@
     const allGranted = isAllGranted(moduleKey);
     const current = [...(localMatrix.value[selectedRole.value] || [])];
     module.actions.forEach((a) => {
+      if (!isActionAllowed(a)) return;
       const perm = `${moduleKey}.${a.key}`;
       const idx = current.indexOf(perm);
       if (allGranted && idx > -1) current.splice(idx, 1);
@@ -701,8 +741,10 @@
     border-radius: 16px;
     border: 1.5px solid #f1f5f9;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    overflow: visible;
+    overflow: hidden;
     transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
   }
   .module-card:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
@@ -793,6 +835,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
     padding: 0 1.25rem;
+    padding-bottom: 0.5rem;
   }
 
   .perm-pill {
@@ -855,6 +898,32 @@
     color: #7dd3fc;
   }
 
+  .action-lvl-badge {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    margin-right: 6px;
+    margin-left: auto;
+  }
+  .action-lvl-badge.lvl-low {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+  .action-lvl-badge.lvl-med {
+    background: #fef08a;
+    color: #854d0e;
+  }
+  .action-lvl-badge.lvl-high {
+    background: #fed7aa;
+    color: #c2410c;
+  }
+  .action-lvl-badge.lvl-crit {
+    background: #fecdd3;
+    color: #be123c;
+  }
+
   .perm-check {
     width: 18px;
     height: 18px;
@@ -867,15 +936,31 @@
     flex-shrink: 0;
     transition: all 0.15s;
   }
-  .perm-pill.granted .perm-check {
+  .perm-check.is-locked {
+    background: #f8fafc;
+    border-color: #f1f5f9;
+    color: #94a3b8;
+  }
+  .perm-pill.granted .perm-check:not(.is-locked) {
     background: #0ea5e9;
     border-color: #0ea5e9;
     color: white;
   }
 
+  .perm-pill.disabled.locked {
+    background: #f8fafc;
+    border-color: #f1f5f9;
+    cursor: not-allowed;
+    opacity: 0.75;
+  }
+  .perm-pill.disabled.locked:hover {
+    border-color: #f1f5f9;
+  }
+
   /* Progress Bar */
   .module-progress {
     padding: 0.75rem 1.25rem 1.25rem;
+    margin-top: auto;
   }
   .progress-bar {
     height: 4px;

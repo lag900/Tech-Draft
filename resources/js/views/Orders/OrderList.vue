@@ -109,7 +109,7 @@
               />
             </div>
             <div class="filter-actions-grid">
-              <select v-model="filterStatus" class="filter-select">
+              <select v-model="filterStatus" class="filter-select hidden md:block">
                 <option value="all">{{ t('All Statuses', 'كل الحالات') }}</option>
                 <option v-for="(val, key) in statusMap" :key="key" :value="key">
                   {{ t(val.en, val.ar) }}
@@ -252,7 +252,7 @@
                         <button
                           class="status-pill-v2 mx-auto"
                           :class="[order.status, { loading: updatingStatusId === order.id }]"
-                          @click.stop="toggleDropdown(order.id)"
+                          @click.stop="openStatusModal(order, $event)"
                         >
                           <span
                             v-if="updatingStatusId !== order.id"
@@ -273,36 +273,6 @@
                           </span>
                           <div v-else class="status-loading-spinner"></div>
                         </button>
-
-                        <Transition name="fade-pop">
-                          <div v-if="activeDropdownId === order.id" class="status-dropdown-menu">
-                            <div class="dropdown-header">
-                              {{ t('Change Order Status', 'تغيير حالة الطلب') }}
-                            </div>
-                            <button
-                              v-for="(val, key) in statusMap"
-                              :key="key"
-                              class="dropdown-item"
-                              :class="{ 'is-active': order.status === key }"
-                              @click.stop="changeStatus(order, key)"
-                            >
-                              <span class="item-dot" :class="key"></span>
-                              <span class="flex-1">{{ t(val.en, val.ar) }}</span>
-                              <svg
-                                v-if="order.status === key"
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="3"
-                                class="text-blue-500"
-                              >
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        </Transition>
                       </div>
                       <span
                         v-else
@@ -364,106 +334,146 @@
           </div>
 
           <!-- Premium Mobile-First Orders View -->
-          <div v-else class="space-y-6 p-4">
-            <div
-              v-for="order in filteredOrders"
-              :key="order.id"
-              class="order-mobile-card group relative overflow-hidden"
-              :class="order.status"
-              @click="$router.push('/orders/' + order.id)"
-            >
-              <!-- Status Sidebar Accent -->
-              <div class="card-status-accent"></div>
-
-              <!-- 1. Header: Primary Data (Title + Status Row) -->
-              <div class="relative z-10 mb-1 flex items-start justify-between gap-4">
-                <h4 class="text-[17px] leading-tight font-black text-slate-900">
-                  {{ order.title || t('Untitled Design', 'تصميم بدون اسم') }}
-                </h4>
-                <div class="shrink-0 pt-0.5">
-                  <span
-                    :class="[
-                      'status-pill-v2 sm !min-w-0 !px-3 text-[11px] font-bold tracking-tighter uppercase',
-                      order.status,
-                    ]"
-                  >
-                    {{ t(statusMap[order.status]?.en, statusMap[order.status]?.ar) }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- 2. Unique ID (Sub-header) -->
-              <div class="relative z-10 mb-5">
-                <span class="id-badge !rounded-md !px-2.5 !py-1 !text-[10px]"
-                  >#{{ order.order_code }}</span
-                >
-              </div>
-
-              <!-- 3. Dynamic Metadata Grid -->
-              <div
-                class="relative z-10 mb-7 grid grid-cols-2 gap-4 rounded-2xl border border-slate-100/50 bg-slate-50/50 p-4"
-              >
-                <div class="info-item">
-                  <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
-                    t('Client', 'العميل')
-                  }}</span>
-                  <span class="value block truncate text-[13px] font-black text-slate-700">{{
-                    order.client?.brand_name || t('Individual', 'مستقل')
-                  }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
-                    t('Established', 'تاريخ الإنشاء')
-                  }}</span>
-                  <span class="value block text-[13px] font-black text-slate-700">{{
-                    formatTime(order.created_at)
-                  }}</span>
-                </div>
-                <div
-                  class="info-item col-span-2 mt-1 flex justify-between gap-4 border-t border-slate-100 pt-2"
-                >
-                  <div>
-                    <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
-                      t('Category', 'التصنيف')
-                    }}</span>
-                    <span class="category-tag-v3">{{ order.category?.name || '---' }}</span>
-                  </div>
-                  <div>
-                    <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
-                      t('Material', 'الخامة')
-                    }}</span>
-                    <span
-                      class="block max-w-[120px] truncate text-[12px] font-bold text-slate-700"
-                      >{{ order.fabric_details?.type || order.fabric_type || '---' }}</span
-                    >
-                  </div>
-                </div>
-              </div>
-
-              <!-- 4. Touch-Optimized Primary Actions (Bottom Row) -->
-              <div class="relative z-10 mt-auto flex">
-                <!-- Promoted Primary Action -->
+          <div v-else class="space-y-6">
+            <!-- Mobile Horizontal Status Switcher -->
+            <div class="mobile-status-tabs-container">
+              <div class="mobile-status-tabs custom-scrollbar">
                 <button
-                  class="mobile-btn-primary w-full !bg-blue-600 !text-white !shadow-blue-200"
-                  @click.stop="$router.push('/orders/' + order.id)"
+                  v-for="status in kanbanStatuses"
+                  :key="status"
+                  class="mobile-status-tab"
+                  :class="[{ active: filterStatus === status }]"
+                  @click="filterStatus = status"
                 >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path
-                      d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"
-                    />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                  <span class="text-sm">{{ t('View Details', 'عرض التفاصيل') }}</span>
+                  <span class="tab-label">{{ t(statusMap[status].en, statusMap[status].ar) }}</span>
+                  <span class="tab-count" :class="status">{{
+                    dynamicStats[status]?.count || 0
+                  }}</span>
                 </button>
+              </div>
+            </div>
+
+            <div class="space-y-6 px-4 pb-4">
+              <div
+                v-for="order in filteredOrders"
+                :key="order.id"
+                class="order-mobile-card group relative overflow-hidden"
+                :class="order.status"
+                @click="$router.push('/orders/' + order.id)"
+              >
+                <!-- Status Sidebar Accent -->
+                <div class="card-status-accent"></div>
+
+                <!-- 1. Header: Primary Data (Title + Status Row) -->
+                <div class="relative z-10 mb-1 flex items-start justify-between gap-4">
+                  <h4 class="text-[17px] leading-tight font-black text-slate-900">
+                    {{ order.title || t('Untitled Design', 'تصميم بدون اسم') }}
+                  </h4>
+                  <div v-if="user?.role !== 'client'" class="shrink-0 pt-0.5">
+                    <button
+                      class="status-pill-v2 sm inline-flex !min-w-0 items-center gap-1.5 !px-3 text-[11px] font-bold tracking-tighter uppercase"
+                      :class="[order.status]"
+                      @click.stop="openStatusModal(order, $event)"
+                    >
+                      {{ t(statusMap[order.status]?.en, statusMap[order.status]?.ar) }}
+                      <svg
+                        class="opacity-50"
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-else class="shrink-0 pt-0.5">
+                    <span
+                      :class="[
+                        'status-pill-v2 sm !min-w-0 !px-3 text-[11px] font-bold tracking-tighter uppercase',
+                        order.status,
+                      ]"
+                    >
+                      {{ t(statusMap[order.status]?.en, statusMap[order.status]?.ar) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 2. Unique ID (Sub-header) -->
+                <div class="relative z-10 mb-5">
+                  <span class="id-badge !rounded-md !px-2.5 !py-1 !text-[10px]"
+                    >#{{ order.order_code }}</span
+                  >
+                </div>
+
+                <!-- 3. Dynamic Metadata Grid -->
+                <div
+                  class="relative z-10 mb-7 grid grid-cols-2 gap-4 rounded-2xl border border-slate-100/50 bg-slate-50/50 p-4"
+                >
+                  <div class="info-item">
+                    <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
+                      t('Client', 'العميل')
+                    }}</span>
+                    <span class="value block truncate text-[13px] font-black text-slate-700">{{
+                      order.client?.brand_name || t('Individual', 'مستقل')
+                    }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
+                      t('Established', 'تاريخ الإنشاء')
+                    }}</span>
+                    <span class="value block text-[13px] font-black text-slate-700">{{
+                      formatTime(order.created_at)
+                    }}</span>
+                  </div>
+                  <div
+                    class="info-item col-span-2 mt-1 flex justify-between gap-4 border-t border-slate-100 pt-2"
+                  >
+                    <div>
+                      <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
+                        t('Category', 'التصنيف')
+                      }}</span>
+                      <span class="category-tag-v3">{{ order.category?.name || '---' }}</span>
+                    </div>
+                    <div>
+                      <span class="label !mb-1 !text-[9px] font-black text-slate-400 uppercase">{{
+                        t('Material', 'الخامة')
+                      }}</span>
+                      <span
+                        class="block max-w-[120px] truncate text-[12px] font-bold text-slate-700"
+                        >{{ order.fabric_details?.type || order.fabric_type || '---' }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 4. Touch-Optimized Primary Actions (Bottom Row) -->
+                <div class="relative z-10 mt-auto flex">
+                  <!-- Promoted Primary Action -->
+                  <button
+                    class="mobile-btn-primary w-full !bg-blue-600 !text-white !shadow-blue-200"
+                    @click.stop="$router.push('/orders/' + order.id)"
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"
+                      />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <span class="text-sm">{{ t('View Details', 'عرض التفاصيل') }}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -591,7 +601,7 @@
               group="orders"
               item-key="id"
               class="draggable-area"
-              :disabled="!hasPermission(user, 'orders.edit')"
+              :disabled="!can('orders.edit')"
               ghost-class="ghost-card"
               drag-class="drag-card"
               chosen-class="chosen-card"
@@ -714,6 +724,95 @@
           </div>
         </Transition>
       </Teleport>
+      <!-- Status Modal / Bottom Sheet -->
+      <Teleport to="body">
+        <Transition name="fade">
+          <div
+            v-if="selectedOrderForStatus && isMobile"
+            class="status-modal-overlay"
+            @click="closeStatusModal"
+          >
+            <div class="status-bottom-sheet" @click.stop>
+              <div class="sheet-header">
+                {{ t('Change Order Status', 'تغيير حالة الطلب') }}
+                <button class="sheet-close" @click="closeStatusModal">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div class="sheet-body custom-scrollbar">
+                <button
+                  v-for="(val, key) in statusMap"
+                  :key="key"
+                  class="sheet-status-item"
+                  :class="{ 'is-active': selectedOrderForStatus.status === key }"
+                  @click.stop="changeStatus(selectedOrderForStatus, key)"
+                >
+                  <span class="item-dot" :class="key"></span>
+                  <span class="flex-1 text-start font-bold">{{ t(val.en, val.ar) }}</span>
+                  <svg
+                    v-if="selectedOrderForStatus.status === key"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    class="text-blue-500"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+
+        <Transition name="fade-pop">
+          <div
+            v-if="selectedOrderForStatus && !isMobile"
+            class="desktop-popover"
+            :style="popoverStyle"
+            @click.stop
+          >
+            <div class="dropdown-header">
+              {{ t('Change Order Status', 'تغيير حالة الطلب') }}
+            </div>
+            <div class="sheet-body custom-scrollbar !gap-1 !px-2 !py-2">
+              <button
+                v-for="(val, key) in statusMap"
+                :key="key"
+                class="dropdown-item"
+                :class="{ 'is-active': selectedOrderForStatus.status === key }"
+                @click.stop="changeStatus(selectedOrderForStatus, key)"
+              >
+                <span class="item-dot" :class="key"></span>
+                <span class="flex-1 text-start font-bold">{{ t(val.en, val.ar) }}</span>
+                <svg
+                  v-if="selectedOrderForStatus.status === key"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  class="text-blue-500"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </div>
   </Layout>
 </template>
@@ -725,7 +824,6 @@
   import { hasPermission } from '../../utils/permissions';
   import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
   import axios from 'axios';
-  import Draggable from 'vuedraggable';
   import { useRouter } from 'vue-router';
   import { useLang } from '../../composables/useLang';
 
@@ -754,7 +852,9 @@
   const can = (perm) => hasPermission(user.value, perm);
   const orders = ref([]);
   const search = ref('');
-  const filterStatus = ref('all');
+  const filterStatus = ref(
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 'submitted' : 'all'
+  );
   const filterSeason = ref('');
   const filterFabric = ref('');
   const viewMode = ref('table');
@@ -768,7 +868,7 @@
   const toastMessage = ref('');
   const toastType = ref('success');
   const updatingStatusId = ref(null);
-  const activeDropdownId = ref(null);
+  const selectedOrderForStatus = ref(null);
 
   // Delete Modal State
   const showDeleteModal = ref(false);
@@ -906,11 +1006,11 @@
     if (!can('orders.view')) return router.push('/dashboard');
     fetchOrders();
     fetchStats();
-    window.addEventListener('click', closeAllDropdowns);
+    window.addEventListener('click', closeStatusModal);
   });
 
   onUnmounted(() => {
-    window.removeEventListener('click', closeAllDropdowns);
+    window.removeEventListener('click', closeStatusModal);
   });
 
   // Watch filters and search: trigger reset then fetch
@@ -938,12 +1038,21 @@
     currentPage.value = page;
   };
 
-  const toggleDropdown = (id) => {
-    activeDropdownId.value = activeDropdownId.value === id ? null : id;
+  const popoverStyle = ref({});
+  const openStatusModal = (order, event) => {
+    selectedOrderForStatus.value = order;
+    if (!isMobile.value && event) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      popoverStyle.value = {
+        top: `${rect.bottom + window.scrollY + 8}px`,
+        left: `${Math.max(125, Math.min(window.innerWidth - 125, rect.left + window.scrollX + rect.width / 2))}px`,
+        transform: 'translateX(-50%)',
+      };
+    }
   };
 
-  const closeAllDropdowns = () => {
-    activeDropdownId.value = null;
+  const closeStatusModal = () => {
+    selectedOrderForStatus.value = null;
   };
 
   const confirmDelete = (order) => {
@@ -976,7 +1085,7 @@
 
   // changeStatus closes the dropdown then delegates to updateOrderStatus
   const changeStatus = (order, newStatus) => {
-    activeDropdownId.value = null;
+    closeStatusModal();
     updateOrderStatus(order, newStatus);
   };
 
@@ -1566,7 +1675,6 @@
     stroke: currentColor;
     stroke-width: 2.2;
     overflow: visible;
-    transition: stroke 0.2s;
   }
 
   .action-circle-btn:hover {
@@ -1605,67 +1713,206 @@
     stroke: white !important;
   }
 
-  /* Status Dropdown Refinement */
-  .status-dropdown-menu {
+  .status-cell-relative > button {
+    cursor: pointer;
+  }
+  /* Bottom Sheet / Modal for Status */
+  .status-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .desktop-popover {
     position: absolute;
-    top: calc(100% + 12px);
-    left: 50%;
-    transform: translateX(-50%);
     width: 250px;
+    border-radius: 12px;
+    box-shadow:
+      0 10px 25px -5px rgba(0, 0, 0, 0.1),
+      0 8px 10px -6px rgba(0, 0, 0, 0.05);
     background: white;
-    border-radius: 18px;
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
     border: 1px solid #e2e8f0;
     z-index: 1000;
-    padding: 10px;
-    overflow: visible;
-    animation: dropdownPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: dropdownPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-
-  @keyframes dropdownPop {
-    from {
-      opacity: 0;
-      transform: translateX(-50%) translateY(-10px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0) scale(1);
-    }
+  .desktop-popover::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-left: 1px solid #e2e8f0;
+    border-top: 1px solid #e2e8f0;
+    z-index: -1;
   }
-
   .dropdown-header {
-    padding: 10px 14px;
     font-size: 0.7rem;
     font-weight: 800;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 0.75rem 0.5rem 0.75rem;
+    margin-bottom: 4px;
     border-bottom: 1px solid #f1f5f9;
-    margin-bottom: 8px;
-    text-align: center;
   }
-
   .dropdown-item {
     width: 100%;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 0.875rem;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-size: 0.8125rem;
     font-weight: 700;
     color: #475569;
-    transition: all 0.2s;
-    background: transparent;
-    border: none;
     cursor: pointer;
-    text-align: start;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .dropdown-item:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    transform: translateX(4px);
+  }
+  .rtl .dropdown-item:hover {
+    transform: translateX(-4px);
+  }
+  .dropdown-item.is-active {
+    background: #eff6ff;
+    color: #0284c7;
+  }
+  .dropdown-item .item-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .dropdown-item .item-dot.submitted,
+  .dropdown-item .item-dot.pending {
+    background: #94a3b8;
+  }
+  .dropdown-item .item-dot.technical_ready {
+    background: #3b82f6;
+  }
+  .dropdown-item .item-dot.in_review {
+    background: #0ea5e9;
+  }
+  .dropdown-item .item-dot.sampling {
+    background: #8b5cf6;
+  }
+  .dropdown-item .item-dot.approved {
+    background: #10b981;
+  }
+  .dropdown-item .item-dot.production {
+    background: #f97316;
+  }
+  .dropdown-item .item-dot.completed {
+    background: #14b8a6;
+  }
+  .dropdown-item .item-dot.cancelled {
+    background: #ef4444;
   }
 
-  .dropdown-item:hover {
-    background: #f0f7ff;
-    color: #2563eb;
-    transform: translateX(4px);
+  @keyframes dropdownPop {
+    from {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  .fade-pop-enter-active,
+  .fade-pop-leave-active {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .fade-pop-enter-from,
+  .fade-pop-leave-to {
+    opacity: 0;
+    transform: translateY(0) scale(0.95);
+  }
+
+  @media (min-width: 768px) {
+    .status-modal-overlay {
+      align-items: center;
+    }
+  }
+  .status-bottom-sheet {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 24px 24px 0 0;
+    overflow: hidden;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(0);
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  .sheet-header {
+    padding: 1.25rem 1.5rem;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+  }
+  .sheet-close {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .sheet-body {
+    padding: 1rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .sheet-status-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sheet-status-item:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  .sheet-status-item.is-active {
+    background: #f0f9ff;
+    border-color: #3b82f6;
+    color: #0ea5e9;
   }
 
   .rtl .dropdown-item:hover {
@@ -2264,5 +2511,95 @@
     color: #94a3b8;
     font-size: 0.875rem;
     font-weight: 600;
+  }
+
+  /* Mobile Status Tabs */
+  .mobile-status-tabs-container {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 60px; /* Adjust according to your navbar height */
+    z-index: 40;
+    margin-top: -1rem; /* Collapse top space */
+    padding-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .mobile-status-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem 0.75rem 1rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mobile-status-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-status-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 99px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    color: #64748b;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+  }
+  .mobile-status-tab.active {
+    background: #0f172a;
+    color: white;
+    border-color: #0f172a;
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);
+  }
+  .mobile-status-tab .tab-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  .mobile-status-tab.active .tab-count {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    box-shadow: none;
+  }
+  .mobile-status-tab .tab-count.submitted {
+    color: #64748b;
+  }
+  .mobile-status-tab .tab-count.pending {
+    color: #f59e0b;
+  }
+  .mobile-status-tab .tab-count.technical_ready {
+    color: #3b82f6;
+  }
+  .mobile-status-tab .tab-count.in_review {
+    color: #0ea5e9;
+  }
+  .mobile-status-tab .tab-count.sampling {
+    color: #8b5cf6;
+  }
+  .mobile-status-tab .tab-count.approved {
+    color: #10b981;
+  }
+  .mobile-status-tab .tab-count.production {
+    color: #f97316;
+  }
+  .mobile-status-tab .tab-count.completed {
+    color: #14b8a6;
+  }
+  .mobile-status-tab.active .tab-count {
+    color: white !important;
   }
 </style>

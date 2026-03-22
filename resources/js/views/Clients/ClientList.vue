@@ -99,7 +99,7 @@
         </div>
       </BaseCard>
 
-      <BaseCard no-padding class="table-card">
+      <BaseCard no-padding class="table-card hidden md:block">
         <div class="table-responsive">
           <table class="modern-table">
             <thead>
@@ -167,6 +167,112 @@
           </table>
         </div>
       </BaseCard>
+
+      <!-- Mobile View: Card-based Layout -->
+      <div class="flex flex-col gap-4 md:hidden">
+        <div
+          v-for="client in filteredClients"
+          :key="'mob-' + client.id"
+          class="mobile-client-card"
+          @click="goToDetail(client.id)"
+        >
+          <!-- Header: Avatar + Info -->
+          <div class="mcc-header">
+            <UserAvatar :user="client" size="md" class="mcc-avatar" />
+            <div class="mcc-title-area">
+              <h3 class="mcc-brand">{{ client.client?.brand_name || 'Individual' }}</h3>
+              <p class="mcc-company">{{ client.client?.company_name || '---' }}</p>
+            </div>
+          </div>
+
+          <!-- Contact & Location Info -->
+          <div class="mcc-contact-grid mt-4">
+            <div class="mcc-info-item">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+              <span>{{ client.email }}</span>
+            </div>
+            <div class="mcc-info-item">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+                />
+              </svg>
+              <span>{{ client.client?.phone || '---' }}</span>
+            </div>
+            <div class="mcc-info-item">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span>{{ client.client?.country || '---' }}</span>
+            </div>
+          </div>
+
+          <!-- Order Stats -->
+          <div class="mcc-stats-grid mt-4 border-t border-slate-100 pt-4">
+            <div class="mcc-stat-box">
+              <span class="mcc-stat-lbl">{{ t('Total', 'الكل') }}</span>
+              <span class="mcc-stat-val">{{ client.total_orders }}</span>
+            </div>
+            <div class="mcc-stat-box">
+              <span class="mcc-stat-lbl">{{ t('Live', 'نشط') }}</span>
+              <span class="mcc-stat-val text-red-500">{{ client.production_orders }}</span>
+            </div>
+            <div class="mcc-stat-box">
+              <span class="mcc-stat-lbl">{{ t('Done', 'تم') }}</span>
+              <span class="mcc-stat-val text-emerald-500">{{ client.completed_orders }}</span>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <div class="mt-4 border-t border-slate-100 pt-4">
+            <button class="mcc-action-btn" @click.stop="goToDetail(client.id)">
+              {{ t('View Activity', 'عرض النشاط') }}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="filteredClients.length === 0"
+          class="rounded-2xl border border-slate-100 bg-white py-10 text-center text-sm font-bold text-slate-500 shadow-sm"
+        >
+          {{ t('No clients found.', 'لم يتم العثور على عملاء.') }}
+        </div>
+      </div>
     </div>
   </Layout>
 </template>
@@ -477,5 +583,133 @@
   }
   .rtl .text-right {
     text-align: left;
+  }
+
+  /* Mobile Client Card Layout */
+  .mobile-client-card {
+    background: white;
+    border-radius: 1.25rem;
+    padding: 1.25rem;
+    border: 1px solid #f1f5f9;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mobile-client-card:active {
+    transform: scale(0.98);
+    background-color: #f8fafc;
+  }
+
+  .mcc-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .mcc-title-area {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mcc-brand {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .mcc-company {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .mcc-contact-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mcc-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #475569;
+  }
+  .mcc-info-item svg {
+    color: #94a3b8;
+  }
+
+  .mcc-stats-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .mcc-stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    background: #f8fafc;
+    padding: 0.75rem 0.5rem;
+    border-radius: 0.75rem;
+  }
+
+  .mcc-stat-lbl {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .mcc-stat-val {
+    font-size: 1.125rem;
+    font-weight: 900;
+    color: #1e293b;
+  }
+
+  .mcc-action-btn {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    color: #334155;
+    padding: 0.875rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 800;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mcc-action-btn:hover,
+  .mcc-action-btn:active {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+  }
+
+  .rtl .mcc-action-btn svg {
+    transform: scaleX(-1);
+  }
+
+  @media (max-width: 767px) {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
   }
 </style>

@@ -79,7 +79,7 @@
           </BaseCard>
 
           <BaseCard class="info-section" :title="t('Recent Activity', 'النشاط الأخير')">
-            <div class="table-responsive">
+            <div class="table-responsive hidden md:block">
               <table class="modern-table">
                 <thead>
                   <tr>
@@ -108,12 +108,45 @@
                     <td>{{ formatDate(order.created_at) }}</td>
                   </tr>
                   <tr v-if="!client.created_orders?.length">
-                    <td colspan="4" class="empty-text">
+                    <td colspan="4" class="empty-text py-6 text-center text-slate-400">
                       {{ t('No recent orders.', 'لا يوجد طلبات حديثة.') }}
                     </td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Mobile Recent Activity -->
+            <div class="mt-4 flex flex-col gap-3 md:hidden">
+              <div
+                v-for="order in client.created_orders"
+                :key="'mob-' + order.id"
+                class="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-sm"
+                @click="$router.push('/orders/' + order.id)"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex flex-col gap-1">
+                    <span class="font-mono text-sm font-bold text-sky-500"
+                      >#{{ order.order_code }}</span
+                    >
+                    <span class="font-bold text-slate-800">{{ order.title }}</span>
+                  </div>
+                  <span class="status-pill shrink-0 text-[0.65rem]" :class="order.status">{{
+                    order.status
+                  }}</span>
+                </div>
+                <div class="mt-1 flex justify-end border-t border-slate-200 pt-2">
+                  <span class="text-xs font-bold text-slate-500">{{
+                    formatDate(order.created_at)
+                  }}</span>
+                </div>
+              </div>
+              <div
+                v-if="!client.created_orders?.length"
+                class="py-6 text-center text-sm font-bold text-slate-400"
+              >
+                {{ t('No recent orders.', 'لا يوجد طلبات حديثة.') }}
+              </div>
             </div>
           </BaseCard>
         </div>
@@ -442,5 +475,29 @@
   }
   .rtl .breadcrumb-mini {
     direction: rtl;
+  }
+
+  @media (max-width: 767px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
+    }
+    .header-actions {
+      width: 100%;
+    }
+    .header-actions button {
+      width: 100%;
+      justify-content: center;
+    }
+    .stats-row {
+      grid-template-columns: 1fr 1fr;
+    }
+    .profile-grid {
+      grid-template-columns: 1fr;
+    }
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

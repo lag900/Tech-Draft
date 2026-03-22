@@ -75,8 +75,8 @@
         </div>
       </BaseCard>
 
-      <!-- User Table -->
-      <BaseCard no-padding class="table-card">
+      <!-- User Table (Desktop) -->
+      <BaseCard no-padding class="table-card hidden md:block">
         <div class="table-responsive">
           <table class="modern-table">
             <thead>
@@ -105,11 +105,13 @@
                 <td>
                   <span
                     class="role-badge"
+                    :title="'Level: ' + (ROLE_INFO[user.role]?.level || 0)"
                     :style="{
                       backgroundColor: getRoleColor(user.role) + '15',
                       color: getRoleColor(user.role),
                     }"
                   >
+                    <span v-if="(ROLE_INFO[user.role]?.level || 0) >= 80">⭐</span>
                     {{
                       t(
                         ROLE_INFO[user.role]?.name || user.role,
@@ -131,7 +133,13 @@
                     <button
                       v-if="can('team.edit')"
                       class="icon-btn edit"
-                      :title="t('Edit', 'تعديل')"
+                      :class="{ '!cursor-not-allowed opacity-50': !canManage(user) }"
+                      :title="
+                        !canManage(user)
+                          ? t('Not enough permission', 'صلاحياتك غير كافية')
+                          : t('Edit', 'تعديل')
+                      "
+                      :disabled="!canManage(user)"
                       @click="openEditModal(user)"
                     >
                       <svg
@@ -148,7 +156,13 @@
                     <button
                       v-if="can('team.edit')"
                       class="icon-btn toggle"
-                      :title="t('Toggle Status', 'تغيير الحالة')"
+                      :class="{ '!cursor-not-allowed opacity-50': !canManage(user) }"
+                      :title="
+                        !canManage(user)
+                          ? t('Not enough permission', 'صلاحياتك غير كافية')
+                          : t('Toggle Status', 'تغيير الحالة')
+                      "
+                      :disabled="!canManage(user)"
                       @click="toggleUserStatus(user)"
                     >
                       <svg
@@ -165,8 +179,15 @@
                     </button>
                     <button
                       v-if="can('team.delete')"
-                      v-show="user.role !== 'superadmin'"
+                      v-show="user.role !== 'superadmin' || currentUser.role === 'superadmin'"
                       class="icon-btn delete"
+                      :class="{ '!cursor-not-allowed opacity-50': !canManage(user) }"
+                      :title="
+                        !canManage(user)
+                          ? t('Not enough permission', 'صلاحياتك غير كافية')
+                          : t('Delete', 'حذف')
+                      "
+                      :disabled="!canManage(user)"
                       @click="deleteUser(user)"
                     >
                       <svg
@@ -194,6 +215,167 @@
           </table>
         </div>
       </BaseCard>
+
+      <!-- User Cards (Mobile) -->
+      <div class="mt-4 flex flex-col gap-4 md:hidden">
+        <div
+          v-for="user in filteredUsers"
+          :key="user.id"
+          class="mobile-user-card rounded-[1.25rem] border border-slate-100 bg-white p-4 shadow-sm"
+        >
+          <div class="flex items-center gap-3">
+            <UserAvatar :user="user" size="md" />
+            <div class="flex flex-col">
+              <span class="text-lg font-extrabold text-slate-900">{{ user.name }}</span>
+              <span
+                v-if="user.client"
+                class="mt-0.5 text-[0.7rem] font-extrabold text-sky-500 uppercase"
+              >
+                🏢 {{ user.client.brand_name }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 flex flex-col gap-2 text-sm font-semibold text-slate-600">
+            <div class="flex items-center gap-2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#94a3b8"
+                stroke-width="2"
+              >
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+              {{ user.email }}
+            </div>
+            <div class="flex items-center gap-2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#94a3b8"
+                stroke-width="2"
+              >
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+              {{ user.department || '---' }}
+            </div>
+
+            <div class="mt-2 flex items-center justify-between">
+              <span
+                class="role-badge flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-extrabold"
+                :title="'Level: ' + (ROLE_INFO[user.role]?.level || 0)"
+                :style="{
+                  backgroundColor: getRoleColor(user.role) + '15',
+                  color: getRoleColor(user.role),
+                }"
+              >
+                <span v-if="(ROLE_INFO[user.role]?.level || 0) >= 80">⭐</span>
+                {{
+                  t(
+                    ROLE_INFO[user.role]?.name || user.role,
+                    ROLE_INFO[user.role]?.name || user.role
+                  )
+                }}
+              </span>
+              <span class="status-indicator" :class="user.status">
+                {{ t(user.status, user.status === 'active' ? 'نشط' : 'معطل') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-4 flex gap-2 border-t border-slate-100 pt-4">
+            <button
+              v-if="can('team.edit')"
+              class="hidden-mobile-none flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-100 bg-slate-50 py-2 text-slate-600 transition-colors"
+              :class="!canManage(user) ? '!cursor-not-allowed opacity-50' : 'hover:bg-slate-100'"
+              :disabled="!canManage(user)"
+              :title="
+                !canManage(user)
+                  ? t('Not enough permission', 'صلاحياتك غير كافية')
+                  : t('Edit', 'تعديل')
+              "
+              @click="openEditModal(user)"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+              </svg>
+              <span class="text-xs font-bold">{{ t('Edit', 'تعديل') }}</span>
+            </button>
+            <button
+              v-if="can('team.edit')"
+              class="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-100 bg-slate-50 py-2 text-slate-600 transition-colors"
+              :class="!canManage(user) ? '!cursor-not-allowed opacity-50' : 'hover:bg-slate-100'"
+              :disabled="!canManage(user)"
+              :title="
+                !canManage(user)
+                  ? t('Not enough permission', 'صلاحياتك غير كافية')
+                  : t('Toggle Status', 'تغيير الحالة')
+              "
+              @click="toggleUserStatus(user)"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                <line x1="12" y1="2" x2="12" y2="12" />
+              </svg>
+              <span class="text-xs font-bold">{{ t('Toggle', 'الحالة') }}</span>
+            </button>
+            <button
+              v-if="can('team.delete')"
+              v-show="user.role !== 'superadmin' || currentUser.role === 'superadmin'"
+              class="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-rose-100 bg-rose-50 py-2 text-rose-600 transition-colors"
+              :class="!canManage(user) ? '!cursor-not-allowed opacity-50' : 'hover:bg-rose-100'"
+              :disabled="!canManage(user)"
+              :title="
+                !canManage(user)
+                  ? t('Not enough permission', 'صلاحياتك غير كافية')
+                  : t('Delete', 'حذف')
+              "
+              @click="deleteUser(user)"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                />
+              </svg>
+              <span class="text-xs font-bold">{{ t('Delete', 'حذف') }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="filteredUsers.length === 0"
+          class="mt-4 rounded-2xl border border-slate-100 bg-white py-10 text-center text-sm font-bold text-slate-500 shadow-sm"
+        >
+          {{ t('No users found.', 'لا يوجد مستخدمين.') }}
+        </div>
+      </div>
 
       <!-- Create/Edit Modal -->
       <div v-if="showModal" class="modal-overlay" @click="closeModal">
@@ -240,8 +422,14 @@
               <div class="field">
                 <label>{{ t('Assigned Role', 'الدور المعين') }}</label>
                 <select v-model="form.role" required>
-                  <option v-for="(info, key) in INTERNAL_ROLES" :key="key" :value="key">
+                  <option
+                    v-for="(info, key) in INTERNAL_ROLES"
+                    :key="key"
+                    :value="key"
+                    :disabled="!canAssignRole(key)"
+                  >
                     {{ t(info.name, info.name) }}
+                    {{ !canAssignRole(key) ? ' (Unauthorized)' : '' }}
                   </option>
                 </select>
               </div>
@@ -309,7 +497,7 @@
   import UserAvatar from '../../components/UI/UserAvatar.vue';
   import AlertModal from '../../components/UI/AlertModal.vue';
   import ConfirmModal from '../../components/UI/ConfirmModal.vue';
-  import { ROLE_INFO, hasPermission } from '../../utils/permissions';
+  import { ROLE_INFO, hasPermission, canManageUser } from '../../utils/permissions';
   import { ref, onMounted, computed, reactive } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import axios from 'axios';
@@ -318,6 +506,14 @@
   const router = useRouter();
   const currentUser = ref(JSON.parse(localStorage.getItem('user') || 'null'));
   const can = (perm) => hasPermission(currentUser.value, perm);
+
+  const canManage = (targetUser) => {
+    return canManageUser(currentUser.value?.role, targetUser?.role);
+  };
+
+  const canAssignRole = (targetRole) => {
+    return canManageUser(currentUser.value?.role, targetRole);
+  };
 
   const users = ref([]);
   const search = ref('');
@@ -603,6 +799,10 @@
     border-radius: 8px;
     font-size: 0.75rem;
     font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: help;
   }
   .dept-text {
     font-weight: 700;
@@ -770,5 +970,36 @@
   }
   .rtl .action-btns {
     justify-content: flex-start;
+  }
+
+  @media (max-width: 767px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .header-actions {
+      width: 100%;
+    }
+    .header-actions button {
+      flex: 1;
+      justify-content: center;
+    }
+    .filter-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .search-box {
+      max-width: 100%;
+    }
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    .modal-card {
+      width: 90%;
+      padding: 1.5rem;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
   }
 </style>

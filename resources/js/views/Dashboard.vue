@@ -152,7 +152,7 @@
             </BaseButton>
           </template>
 
-          <div class="table-responsive">
+          <div class="table-responsive hidden md:block">
             <table class="modern-table">
               <thead>
                 <tr>
@@ -191,6 +191,46 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Mobile View: Card-based Layout -->
+          <div class="flex flex-col gap-3 p-4 md:hidden">
+            <div
+              v-for="order in recentOrders"
+              :key="'mob-' + order.id"
+              class="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-sm"
+              @click="$router.push('/orders/' + order.id)"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex flex-col gap-1">
+                  <span class="order-code text-sm">#{{ order.order_code }}</span>
+                  <span v-if="user?.role !== 'client'" class="text-sm font-bold text-slate-800">
+                    {{ order.client?.brand_name || 'Individual' }}
+                  </span>
+                  <span class="text-xs font-bold text-slate-400">{{
+                    order.category?.name || '---'
+                  }}</span>
+                </div>
+                <span
+                  class="status-pill shrink-0 border bg-white text-[0.65rem] shadow-sm"
+                  :class="order.status"
+                >
+                  {{ t(statusMap[order.status]?.en, statusMap[order.status]?.ar) }}
+                </span>
+              </div>
+              <div class="mt-1 flex justify-end border-t border-slate-200 pt-2">
+                <span class="text-xs font-bold text-slate-500">{{
+                  formatDate(order.created_at)
+                }}</span>
+              </div>
+            </div>
+
+            <div
+              v-if="recentOrders.length === 0"
+              class="mt-2 rounded-2xl border border-slate-100 bg-white py-6 text-center text-sm font-bold text-slate-400 shadow-sm"
+            >
+              {{ t('No recent orders found.', 'لا توجد طلبات حديثة.') }}
+            </div>
           </div>
         </BaseCard>
 
@@ -713,10 +753,16 @@
 
   /* === Main Content Grid (Recent Orders + Quick Stats) === */
   .main-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
-    align-items: start;
+  }
+  @media (min-width: 1024px) {
+    .main-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      align-items: start;
+    }
   }
 
   /* === Table Styles === */

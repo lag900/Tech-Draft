@@ -64,4 +64,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'created_by');
     }
+
+    public function roleModel()
+    {
+        return $this->belongsTo(Role::class, 'role', 'slug');
+    }
 }

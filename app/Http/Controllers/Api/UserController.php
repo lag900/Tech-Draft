@@ -7,9 +7,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class UserController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request)
     {
         $query = User::where('role', '!=', 'client');
@@ -53,6 +55,12 @@ class UserController extends Controller
             'status' => 'required|string|in:active,disabled',
         ]);
 
+        $targetRole = \App\Models\Role::where('slug', $request->role)->first();
+        $authLevel = $request->user()->roleModel->level ?? 0;
+        if ($targetRole && $authLevel < ($targetRole->level ?? 0)) {
+            return response()->json(['message' => 'Unauthorized to assign this role.'], 403);
+        }
+
         return User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -65,6 +73,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $this->authorize('update', $user);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -72,6 +82,14 @@ class UserController extends Controller
             'role' => 'sometimes|required|string',
             'status' => 'sometimes|required|string|in:active,disabled',
         ]);
+
+        if ($request->has('role')) {
+            $targetRole = \App\Models\Role::where('slug', $request->role)->first();
+            $authLevel = $request->user()->roleModel->level ?? 0;
+            if ($targetRole && $authLevel < ($targetRole->level ?? 0)) {
+                return response()->json(['message' => 'Unauthorized to assign this role.'], 403);
+            }
+        }
 
         $data = $request->only(['name', 'email', 'role', 'department', 'status']);
         
@@ -129,6 +147,8 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $this->authorize('delete', $user);
+
         if ($user->role === 'superadmin') {
             return response()->json(['message' => 'Cannot delete superadmin'], 403);
         }
@@ -138,6 +158,8 @@ class UserController extends Controller
 
     public function toggleStatus(User $user)
     {
+        $this->authorize('update', $user);
+
         if ($user->role === 'superadmin') {
              return response()->json(['message' => 'Cannot toggle superadmin status'], 403);
         }

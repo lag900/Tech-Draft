@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { hasPermission, PERMISSIONS } from '../utils/permissions';
+import { hasPermission } from '../utils/permissions';
 
 import Welcome from '../views/Welcome.vue';
 import Login from '../views/Login.vue';
@@ -36,44 +36,44 @@ const routes = [
     path: '/dashboard',
     component: Dashboard,
     name: 'dashboard',
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, permission: 'dashboard.view' },
   },
   {
     path: '/clients',
     component: ClientList,
     name: 'clients',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_USERS },
+    meta: { requiresAuth: true, permission: 'clients.view' },
   },
   {
     path: '/clients/:id',
     component: ClientDetail,
     name: 'client-detail',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_USERS },
+    meta: { requiresAuth: true, permission: 'clients.view' },
   },
   {
     path: '/orders',
     component: OrderList,
     name: 'orders',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_ORDERS },
+    meta: { requiresAuth: true, permission: 'orders.view' },
   },
   {
     path: '/orders/create',
     component: OrderWizard,
     name: 'order-create',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_ORDERS },
+    meta: { requiresAuth: true, permission: 'orders.create' },
   },
   {
     path: '/orders/:id',
     component: OrderDetail,
     name: 'order-detail',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_ORDERS },
+    meta: { requiresAuth: true, permission: 'orders.view' },
     props: true,
   },
   {
     path: '/orders/:id/tech-pack',
     component: () => import('../views/Orders/TechPackGenerator.vue'),
     name: 'order-tech-pack',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_ORDERS },
+    meta: { requiresAuth: true, permission: 'orders.export' },
     props: true,
   },
 
@@ -81,85 +81,85 @@ const routes = [
     path: '/messages',
     component: Messages,
     name: 'messages',
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true }, // Messages doesn't have a perm matrix yet.
   },
   {
     path: '/designs',
     component: Designs,
     name: 'designs',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_DESIGNS },
+    meta: { requiresAuth: true, permission: 'designs.view' },
   },
   {
     path: '/designs/create',
     component: () => import('../views/Designs/DesignCreate.vue'),
     name: 'design-create',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_DESIGNS },
+    meta: { requiresAuth: true, permission: 'designs.create' },
   },
   {
     path: '/designs/:id',
     component: () => import('../views/Designs/DesignDetail.vue'),
     name: 'design-detail',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_DESIGNS },
+    meta: { requiresAuth: true, permission: 'designs.view' },
   },
   {
     path: '/categories',
     component: Categories,
     name: 'categories',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_CATEGORIES },
+    meta: { requiresAuth: true, permission: 'categories.view' },
   },
   {
     path: '/fabrics',
     component: Fabrics,
     name: 'fabrics',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_FABRICS },
+    meta: { requiresAuth: true, permission: 'fabrics.view' },
   },
   {
     path: '/measurements',
     component: MeasurementTemplates,
     name: 'measurements',
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, permission: 'measurements.view' },
   },
   {
     path: '/users',
     component: UserList,
     name: 'users',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_USERS },
+    meta: { requiresAuth: true, permission: 'team.view' },
   },
   {
     path: '/settings/roles',
     component: Roles,
     name: 'roles',
-    meta: { requiresAuth: true, permission: PERMISSIONS.SYSTEM_SETTINGS },
+    meta: { requiresAuth: true, permission: 'roles.view' },
   },
   {
     path: '/settings/permissions',
     component: PermissionsMatrix,
     name: 'permissions-matrix',
-    meta: { requiresAuth: true, permission: PERMISSIONS.SYSTEM_SETTINGS },
+    meta: { requiresAuth: true, permission: 'roles.edit' },
   },
   {
     path: '/settings/landing-page',
     component: () => import('../views/Settings/LandingPageCms.vue'),
     name: 'landing-page-cms',
-    meta: { requiresAuth: true, permission: PERMISSIONS.SYSTEM_SETTINGS },
+    meta: { requiresAuth: true, permission: 'settings.edit' },
   },
   {
     path: '/settings',
     component: Settings,
     name: 'settings',
-    meta: { requiresAuth: true, permission: PERMISSIONS.SYSTEM_SETTINGS },
+    meta: { requiresAuth: true, permission: 'settings.view' },
   },
   {
     path: '/settings/item-types',
     component: ItemTypes,
     name: 'item-types',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_CATEGORIES },
+    meta: { requiresAuth: true, permission: 'item_types.view' },
   },
   {
     path: '/settings/fits',
     component: Fits,
     name: 'fits',
-    meta: { requiresAuth: true, permission: PERMISSIONS.MANAGE_CATEGORIES },
+    meta: { requiresAuth: true, permission: 'fit_types.view' },
   },
   {
     path: '/products',

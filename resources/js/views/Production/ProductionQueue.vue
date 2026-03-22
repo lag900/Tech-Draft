@@ -22,8 +22,8 @@
       </div>
 
       <div class="queue-container">
-        <!-- Main Queue Table -->
-        <BaseCard no-padding class="queue-card">
+        <!-- Main Queue Table (Desktop) -->
+        <BaseCard no-padding class="queue-card hidden md:block">
           <div class="table-responsive">
             <table class="modern-table">
               <thead>
@@ -135,6 +135,109 @@
             </table>
           </div>
         </BaseCard>
+
+        <!-- Main Queue Cards (Mobile) -->
+        <div class="mt-4 flex flex-col gap-4 md:hidden">
+          <TransitionGroup name="list">
+            <div
+              v-for="(order, index) in queue"
+              :key="'mob-' + order.id"
+              class="mobile-queue-card flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm transition-all"
+              :class="order.priority > 0 ? 'border-amber-200 bg-amber-50/30' : 'border-slate-100'"
+            >
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                  <div
+                    class="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black"
+                    :class="
+                      order.production_priority > 0
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    "
+                  >
+                    #{{ index + 1 }}
+                  </div>
+                  <span
+                    class="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-xs font-bold text-slate-600"
+                    >#{{ order.order_code }}</span
+                  >
+                </div>
+                <!-- Priority Toggle -->
+                <button
+                  class="-mr-2 p-2 transition-all"
+                  :class="
+                    order.production_priority > 0
+                      ? 'scale-110 text-amber-500 drop-shadow-sm'
+                      : 'text-slate-300'
+                  "
+                  @click="togglePriority(order)"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Product Info -->
+              <div class="flex flex-col">
+                <span class="text-sm font-black text-slate-800">{{ order.title }}</span>
+                <span class="text-xs font-bold text-slate-400">{{ order.category?.name }}</span>
+                <span class="mt-1 text-xs font-bold text-sky-600 uppercase">{{
+                  order.client?.brand_name || t('Individual', 'عميل مستقل')
+                }}</span>
+              </div>
+
+              <!-- Stage & Qty -->
+              <div class="mt-2 flex items-center justify-between border-t border-slate-100 pt-3">
+                <span
+                  class="rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-xs font-black text-sky-600"
+                >
+                  {{ getTotalQty(order) }} {{ t('Units', 'قطعة') }}
+                </span>
+
+                <div class="stage-badge" :class="order.production_stage">
+                  <span class="stage-dot"></span>
+                  {{
+                    t(stageMap[order.production_stage]?.en, stageMap[order.production_stage]?.ar)
+                  }}
+                </div>
+              </div>
+            </div>
+          </TransitionGroup>
+
+          <div v-if="loading" class="py-10 text-center text-slate-500">
+            <div class="spinner"></div>
+            <p class="text-sm font-bold">{{ t('Loading Queue...', 'جاري تحميل الطابور...') }}</p>
+          </div>
+
+          <div
+            v-if="!loading && queue.length === 0"
+            class="rounded-2xl border border-slate-100 bg-white p-4 py-10 text-center font-bold text-slate-400 shadow-sm"
+          >
+            <svg
+              class="mx-auto mb-2"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#e2e8f0"
+              stroke-width="1.5"
+            >
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <p>{{ t('Production queue is empty.', 'طابور الإنتاج فارغ حالياً.') }}</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -470,5 +573,19 @@
   .list-leave-to {
     opacity: 0;
     transform: translateX(30px);
+  }
+
+  @media (max-width: 767px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .header-stats {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
   }
 </style>

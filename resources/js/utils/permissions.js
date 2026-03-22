@@ -60,36 +60,43 @@ export const ROLE_INFO = {
     name: 'Super Admin',
     description: 'Full system access, manage roles and configuration.',
     color: '#ef4444',
+    level: 100,
   },
   [ROLES.ADMIN]: {
     name: 'Administrator',
     description: 'Manage users, orders, and system core modules.',
     color: '#3b82f6',
+    level: 90,
   },
   [ROLES.MANAGER]: {
     name: 'Manager',
     description: 'Quality control, approval workflow and team management.',
     color: '#10b981',
+    level: 80,
   },
   [ROLES.DATA_ENTRY]: {
     name: 'Data Entry',
     description: 'Creating orders, fabrics, and updating records.',
     color: '#8b5cf6',
+    level: 50,
   },
   [ROLES.DESIGNER]: {
     name: 'Designer',
     description: 'Sketching, pattern review and design management.',
     color: '#ec4899',
+    level: 70,
   },
   [ROLES.PRODUCTION]: {
     name: 'Production',
     description: 'Manufacturing oversight and floor operations.',
     color: '#f97316',
+    level: 60,
   },
   [ROLES.CLIENT]: {
     name: 'Client',
     description: 'External brand access for creating and tracking orders.',
     color: '#f59e0b',
+    level: 10,
   },
 };
 
@@ -181,6 +188,15 @@ export function hasPermission(user, permission) {
 
   const permissions = user.permissions || ROLE_PERMISSIONS[user.role] || [];
   return permissions.includes(permission);
+}
+
+/**
+ * Check if a user has sufficient hierarchical level to manage a target user.
+ */
+export function canManageUser(authUserRole, targetUserRole) {
+  const authLevel = ROLE_INFO[authUserRole]?.level || 0;
+  const targetLevel = ROLE_INFO[targetUserRole]?.level || 0;
+  return authLevel >= targetLevel;
 }
 
 /**

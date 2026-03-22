@@ -92,7 +92,7 @@
         </div>
 
         <!-- Main Dashboard Grid -->
-        <div class="dashboard-grid">
+        <div class="dashboard-grid w-full max-w-full min-w-0">
           <!-- Sidebar / Overview Info -->
           <aside class="dashboard-sidebar">
             <div class="saas-card profile-card text-center">
@@ -140,7 +140,7 @@
           </aside>
 
           <!-- Main Content Area -->
-          <div class="dashboard-main">
+          <div class="dashboard-main w-full max-w-full min-w-0">
             <!-- Modern Tabs -->
             <div class="saas-tabs-nav mb-4">
               <button :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">
@@ -357,59 +357,67 @@
                   </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-x-6 gap-y-8 p-6 lg:grid-cols-3">
-                  <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
-                    <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">{{
-                      t('Primary Fabric', 'القماش الأساسي')
-                    }}</span>
-                    <span class="text-sm font-bold text-slate-900">{{
-                      order.fabric_type ||
-                      order.fabric_details?.type ||
-                      techPack.fabric?.code ||
-                      '---'
-                    }}</span>
-                  </div>
-                  <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
-                    <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">{{
-                      t('Fabric Weight', 'وزن القماش')
-                    }}</span>
-                    <span class="text-sm font-bold text-slate-900">{{
-                      order.fabric_weight || order.fabric_details?.weight
-                        ? `${order.fabric_weight || order.fabric_details?.weight} GSM`
-                        : '---'
-                    }}</span>
-                  </div>
-                  <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
-                    <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">{{
-                      t('Texture / Feel', 'الملمس')
-                    }}</span>
-                    <span class="text-sm font-bold text-slate-900">{{
-                      order.texture || order.fabric_details?.texture || '---'
-                    }}</span>
-                  </div>
-                  <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
-                    <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">{{
-                      t('Composition', 'التركيب')
-                    }}</span>
-                    <span class="text-sm font-bold text-slate-900">{{
-                      order.fabric_composition || order.fabric_details?.composition || '---'
-                    }}</span>
-                  </div>
-                  <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
-                    <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">{{
-                      t('Yarn Type', 'نوع الخيط')
-                    }}</span>
-                    <span class="text-sm font-bold text-slate-900">{{
-                      order.yarn_type || order.fabric_details?.yarn_type || '---'
-                    }}</span>
-                  </div>
-                  <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
-                    <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase">{{
-                      t('Structure', 'البنية')
-                    }}</span>
-                    <span class="text-sm font-bold text-slate-900">{{
-                      order.fabric_structure || order.fabric_details?.structure || '---'
-                    }}</span>
+                <div class="px-4 md:px-0">
+                  <div class="grid grid-cols-2 gap-x-6 gap-y-8 p-6 lg:grid-cols-3">
+                    <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
+                      <span
+                        class="text-[10px] font-black tracking-widest text-slate-400 uppercase"
+                        >{{ t('Primary Fabric', 'القماش الأساسي') }}</span
+                      >
+                      <span class="text-sm font-bold text-slate-900">{{
+                        order.fabric_type ||
+                        order.fabric_details?.type ||
+                        techPack.fabric?.code ||
+                        '---'
+                      }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
+                      <span
+                        class="text-[10px] font-black tracking-widest text-slate-400 uppercase"
+                        >{{ t('Fabric Weight', 'وزن القماش') }}</span
+                      >
+                      <span class="text-sm font-bold text-slate-900">{{
+                        order.fabric_weight || order.fabric_details?.weight
+                          ? `${order.fabric_weight || order.fabric_details?.weight} GSM`
+                          : '---'
+                      }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
+                      <span
+                        class="text-[10px] font-black tracking-widest text-slate-400 uppercase"
+                        >{{ t('Texture / Feel', 'الملمس') }}</span
+                      >
+                      <span class="text-sm font-bold text-slate-900">{{
+                        order.texture || order.fabric_details?.texture || '---'
+                      }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
+                      <span
+                        class="text-[10px] font-black tracking-widest text-slate-400 uppercase"
+                        >{{ t('Composition', 'التركيب') }}</span
+                      >
+                      <span class="text-sm font-bold text-slate-900">{{
+                        order.fabric_composition || order.fabric_details?.composition || '---'
+                      }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
+                      <span
+                        class="text-[10px] font-black tracking-widest text-slate-400 uppercase"
+                        >{{ t('Yarn Type', 'نوع الخيط') }}</span
+                      >
+                      <span class="text-sm font-bold text-slate-900">{{
+                        order.yarn_type || order.fabric_details?.yarn_type || '---'
+                      }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1.5 transition-colors focus-within:bg-slate-50">
+                      <span
+                        class="text-[10px] font-black tracking-widest text-slate-400 uppercase"
+                        >{{ t('Structure', 'البنية') }}</span
+                      >
+                      <span class="text-sm font-bold text-slate-900">{{
+                        order.fabric_structure || order.fabric_details?.structure || '---'
+                      }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -442,9 +450,9 @@
                     </h3>
                   </div>
                 </div>
-                <div class="custom-scrollbar overflow-x-auto">
+                <div class="custom-scrollbar w-full overflow-x-auto">
                   <table
-                    class="w-full text-left text-[13px] whitespace-nowrap text-gray-700 rtl:text-right"
+                    class="w-full min-w-max text-left text-[13px] whitespace-nowrap text-gray-700 rtl:text-right"
                   >
                     <thead class="border-b border-slate-200 bg-slate-50/80 uppercase">
                       <tr>
@@ -842,8 +850,8 @@
                 <h3 class="card-title flex justify-between">
                   {{ t('Model Anatomy (Parts List)', 'أجزاء القطعة') }}
                 </h3>
-                <div v-if="!isEditing" class="overflow-x-auto">
-                  <table class="saas-table text-left">
+                <div v-if="!isEditing" class="w-full overflow-x-auto">
+                  <table class="saas-table w-full min-w-[600px] text-left">
                     <thead>
                       <tr>
                         <th>Piece</th>
@@ -2349,22 +2357,34 @@
   }
 
   .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    display: flex;
+    overflow-x: auto;
     gap: 1rem;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gallery-grid::-webkit-scrollbar {
+    height: 6px;
   }
   .gallery-img-box {
     position: relative;
-    aspect-ratio: 1;
     border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
     border: 1px solid #e2e8f0;
+    flex: 0 0 auto;
+    width: 240px;
+    max-width: 80vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
   }
   .gallery-img-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
     transition: transform 0.3s;
   }
   .gallery-img-box:hover img {
@@ -2866,6 +2886,9 @@
       z-index: 100;
       background: white;
       scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-wrap: nowrap;
     }
     .saas-tabs-nav::-webkit-scrollbar {
       display: none;
@@ -2874,7 +2897,8 @@
     .saas-tabs-nav button {
       padding: 0.75rem 1.25rem;
       font-size: 0.8125rem;
-      min-width: 100px;
+      flex: 0 0 auto;
+      min-width: max-content;
     }
 
     .info-grid,
@@ -2884,7 +2908,7 @@
     }
 
     .gallery-grid {
-      grid-template-columns: repeat(2, 1fr);
+      display: flex;
     }
 
     .dynamic-row {

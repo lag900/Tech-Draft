@@ -412,27 +412,29 @@
               <path d="M3 12h18M3 6h18M3 18h18" />
             </svg>
           </button>
-          <div class="breadcrumb">
+          <div class="breadcrumb flex min-w-0 shrink items-center">
             <template v-if="breadcrumbLinks.length > 0">
               <template v-for="(link, index) in breadcrumbLinks" :key="index">
                 <router-link
                   v-if="index < breadcrumbLinks.length - 1"
                   :to="link.path"
-                  class="bc-item"
+                  class="bc-item hidden md:inline"
                 >
                   {{ link.label }}
                 </router-link>
-                <span v-else class="bc-item active">{{ link.label }}</span>
-                <span v-if="index < breadcrumbLinks.length - 1" class="bc-sep">/</span>
+                <span v-else class="bc-item active truncate">{{ link.label }}</span>
+                <span v-if="index < breadcrumbLinks.length - 1" class="bc-sep hidden md:inline"
+                  >/</span
+                >
               </template>
             </template>
             <template v-else>
-              <span class="bc-item active">{{ routeName }}</span>
+              <span class="bc-item active truncate">{{ routeName }}</span>
             </template>
           </div>
         </div>
 
-        <div class="top-nav-right">
+        <div class="top-nav-right flex shrink-0 items-center">
           <div v-if="!isCollapsed" class="header-search">
             <svg
               width="18"
@@ -852,6 +854,9 @@
   .top-nav-left {
     display: flex;
     align-items: center;
+    min-width: 0;
+    gap: 0.5rem;
+    flex: 1;
   }
 
   .breadcrumb {
@@ -887,6 +892,7 @@
     display: flex;
     align-items: center;
     gap: 1.25rem;
+    flex-shrink: 0;
   }
 
   .header-search {
@@ -965,7 +971,7 @@
   .avatar-img {
     width: 38px;
     height: 38px;
-    border-radius: 10px;
+    border-radius: 50% !important;
     object-fit: cover;
     border: 1px solid #f1f5f9;
   }
@@ -1151,7 +1157,7 @@
     cursor: pointer;
     color: #475569;
     transition: all 0.2s;
-    margin-right: 0.5rem;
+    margin-right: 0.25rem;
     flex-shrink: 0;
   }
   .hamburger-btn:hover {
@@ -1253,13 +1259,30 @@
     }
 
     .top-nav {
-      padding: 0 1rem;
+      padding: 0 0.75rem;
+      gap: 0.5rem;
+    }
+    .top-nav-right {
+      gap: 0.5rem;
     }
     .header-search {
       display: none;
     }
     .breadcrumb {
-      font-size: 0.8rem;
+      font-size: 0.95rem;
+    }
+    .nav-icon-btn {
+      width: 36px;
+      height: 36px;
+    }
+    .hamburger-btn {
+      width: 36px;
+      height: 36px;
+    }
+    .profile-preview:deep(.user-avatar) {
+      width: 36px !important;
+      height: 36px !important;
+      border-radius: 50% !important;
     }
 
     .page-content {
