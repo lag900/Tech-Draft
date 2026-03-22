@@ -249,15 +249,33 @@
         }
       }
 
-      const promises = [
-        axios.get('/api/categories?status=active', { headers }),
-        axios.get('/api/fabrics?status=active', { headers }),
-        axios.get('/api/orders?limit=3', { headers }),
-      ];
+      const catReq = axios.get('/api/categories?status=active', { headers }).catch((e) => {
+        console.warn('categories error', e);
+        return { data: [] };
+      });
+      const fabReq = axios.get('/api/fabrics?status=active', { headers }).catch((e) => {
+        console.warn('fabrics error', e);
+        return { data: [] };
+      });
+      const orderReq = axios.get('/api/orders?limit=3', { headers }).catch((e) => {
+        console.warn('orders error', e);
+        return { data: [] };
+      });
+
+      let clientReq = Promise.resolve({ data: [] });
       if (user.value?.role === 'admin' || user.value?.role === 'manager') {
-        promises.push(axios.get('/api/clients', { headers }));
+        clientReq = axios.get('/api/clients', { headers }).catch((e) => {
+          console.warn('clients error', e);
+          return { data: [] };
+        });
       }
-      const [catRes, fabRes, sugRes, clientRes] = await Promise.all(promises);
+
+      const [catRes, fabRes, sugRes, clientRes] = await Promise.all([
+        catReq,
+        fabReq,
+        orderReq,
+        clientReq,
+      ]);
 
       console.log('Categories API response:', catRes.data);
       categories.value = (catRes.data || []).map((c) => ({

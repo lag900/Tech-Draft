@@ -31,37 +31,37 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // ── Categories ──
-    Route::get('/categories', [CategoryController::class, 'index'])->middleware('permission:categories.view');
-    Route::get('/categories/suggest', [CategoryController::class, 'suggest'])->middleware('permission:categories.view');
-    Route::get('/categories/{category}', [CategoryController::class, 'show'])->middleware('permission:categories.view');
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/categories/suggest', [CategoryController::class, 'suggest']);
+    Route::get('/categories/{category}', [CategoryController::class, 'show']);
     Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:categories.create');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->middleware('permission:categories.edit');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('permission:categories.delete');
 
     // ── Item Types ──
-    Route::get('/item-types', [ItemTypeController::class, 'index'])->middleware('permission:item_types.view');
+    Route::get('/item-types', [ItemTypeController::class, 'index']);
     Route::post('/item-types', [ItemTypeController::class, 'store'])->middleware('permission:item_types.create');
-    Route::get('/item-types/{item_type}', [ItemTypeController::class, 'show'])->middleware('permission:item_types.view');
+    Route::get('/item-types/{item_type}', [ItemTypeController::class, 'show']);
     Route::put('/item-types/{item_type}', [ItemTypeController::class, 'update'])->middleware('permission:item_types.edit');
     Route::delete('/item-types/{item_type}', [ItemTypeController::class, 'destroy'])->middleware('permission:item_types.delete');
 
     // ── Fits ──
-    Route::get('/fits', [FitController::class, 'index'])->middleware('permission:fit_types.view');
+    Route::get('/fits', [FitController::class, 'index']);
     Route::post('/fits', [FitController::class, 'store'])->middleware('permission:fit_types.create');
-    Route::get('/fits/{fit}', [FitController::class, 'show'])->middleware('permission:fit_types.view');
+    Route::get('/fits/{fit}', [FitController::class, 'show']);
     Route::put('/fits/{fit}', [FitController::class, 'update'])->middleware('permission:fit_types.edit');
     Route::delete('/fits/{fit}', [FitController::class, 'destroy'])->middleware('permission:fit_types.delete');
 
     // ── Fabrics ──
-    Route::get('/fabrics', [FabricController::class, 'index'])->middleware('permission:fabrics.view');
+    Route::get('/fabrics', [FabricController::class, 'index']);
     Route::post('/fabrics', [FabricController::class, 'store'])->middleware('permission:fabrics.create');
     Route::put('/fabrics/{fabric}', [FabricController::class, 'update'])->middleware('permission:fabrics.edit');
     Route::delete('/fabrics/{fabric}', [FabricController::class, 'destroy'])->middleware('permission:fabrics.delete');
 
     // ── Measurement Templates ──
-    Route::get('/measurement-templates', [MeasurementTemplateController::class, 'index'])->middleware('permission:measurements.view');
+    Route::get('/measurement-templates', [MeasurementTemplateController::class, 'index']);
     Route::post('/measurement-templates', [MeasurementTemplateController::class, 'store'])->middleware('permission:measurements.create');
-    Route::get('/measurement-templates/{categoryId}', [MeasurementTemplateController::class, 'show'])->middleware('permission:measurements.view');
+    Route::get('/measurement-templates/{categoryId}', [MeasurementTemplateController::class, 'show']);
     Route::get('/measurement-templates/{id}/export', [MeasurementTemplateController::class, 'export'])->middleware('permission:measurements.export');
     Route::post('/measurement-templates/{id}/import', [MeasurementTemplateController::class, 'import'])->middleware('permission:measurements.create');
 
