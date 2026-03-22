@@ -28,62 +28,68 @@
 </template>
 
 <script setup>
-defineProps({
-  items: Array
-});
+  defineProps({
+    items: Array,
+  });
 </script>
 
 <style scoped>
-.tp-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  padding: 12px;
-  margin-bottom: 12px;
-}
+  .tp-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
 
-.card-header {
-  font-size: 13px;
-  font-weight: 900;
-  color: #1e293b;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 6px;
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+  .card-header {
+    font-size: 13px;
+    font-weight: 900;
+    color: #1e293b;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
-.bom-table {
-  width: 100%;
-  border-collapse: collapse;
-}
+  .bom-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
 
-.bom-table th {
-  background: #f8fafc;
-  color: #64748b;
-  font-size: 9px;
-  font-weight: 900;
-  padding: 6px 8px;
-  text-align: center;
-  border-bottom: 1px solid #e2e8f0;
-}
+  .bom-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 6px 8px;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+  }
 
-.bom-table td {
-  border-bottom: 1px solid #f1f5f9;
-  padding: 6px 8px;
-  font-size: 10px;
-  color: #1e293b;
-}
+  .bom-table td {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 6px 8px;
+    font-size: 10px;
+    color: #1e293b;
+  }
 
-.al-l { text-align: left !important; }
-.fw-900 { font-weight: 900; }
-.fw-700 { font-weight: 700; }
+  .al-l {
+    text-align: left !important;
+  }
+  .fw-900 {
+    font-weight: 900;
+  }
+  .fw-700 {
+    font-weight: 700;
+  }
 
-.empty-msg {
-  padding: 16px !important;
-  color: #94a3b8;
-  font-style: italic;
-  text-align: center !important;
-  font-size: 10px;
-}
+  .empty-msg {
+    padding: 16px !important;
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center !important;
+    font-size: 10px;
+  }
 </style>

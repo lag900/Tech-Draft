@@ -19,11 +19,14 @@ use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\MediaFileController;
 
 // Public routes
+Route::get('/landing-page', [\App\Http\Controllers\Api\LandingPageSettingsController::class, 'show']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+    Route::put('/landing-page', [\App\Http\Controllers\Api\LandingPageSettingsController::class, 'update'])->middleware('permission:settings.edit');
+
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 

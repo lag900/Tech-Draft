@@ -1,0 +1,8 @@
+echo "Running Pre-commit Checks (Lint, Format, Test)..."
+
+npx lint-staged
+
+echo "Running Laravel Backend Tests..."
+php artisan test
+
+echo "All checks passed! Committing..."

@@ -1,86 +1,43 @@
 <template>
-  <div class="base-card" :class="{ 'no-padding': noPadding, 'hoverable': hoverable }">
-    <div v-if="$slots.header || title" class="card-header">
+  <div
+    class="relative my-2 rounded-xl border border-blue-100 bg-white shadow-[0_2px_10px_-2px_rgba(37,99,235,0.05)] transition-all duration-200 ease-out"
+    :class="[
+      noPadding ? 'overflow-hidden' : '',
+      hoverable
+        ? 'cursor-pointer hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_8px_30px_-4px_rgba(37,99,235,0.1)]'
+        : '',
+    ]"
+  >
+    <div
+      v-if="$slots.header || title"
+      class="flex items-center justify-between border-b border-blue-50 px-5 py-4"
+    >
       <slot name="header">
-        <h3 v-if="title" class="card-title">{{ title }}</h3>
-        <p v-if="subtitle" class="card-subtitle">{{ subtitle }}</p>
+        <div>
+          <h3 v-if="title" class="m-0 text-[15px] font-semibold tracking-tight text-blue-950">
+            {{ title }}
+          </h3>
+          <p v-if="subtitle" class="mt-1 text-[13px] text-blue-500">{{ subtitle }}</p>
+        </div>
       </slot>
-      <div v-if="$slots.actions" class="card-actions">
+      <div v-if="$slots.actions" class="flex items-center gap-2">
         <slot name="actions" />
       </div>
     </div>
-    <div class="card-body">
+    <div :class="noPadding ? 'p-0' : 'p-5'">
       <slot />
     </div>
-    <div v-if="$slots.footer" class="card-footer">
+    <div v-if="$slots.footer" class="rounded-b-xl border-t border-blue-50 bg-blue-50/20 px-5 py-4">
       <slot name="footer" />
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
-  title: String,
-  subtitle: String,
-  noPadding: Boolean,
-  hoverable: Boolean
-});
+  defineProps({
+    title: String,
+    subtitle: String,
+    noPadding: Boolean,
+    hoverable: Boolean,
+  });
 </script>
-
-<style scoped>
-.base-card {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-  margin: 8px 0;
-  transition: all 0.2s ease;
-  overflow: visible;
-}
-
-.base-card.hoverable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px -5px rgba(0,0,0,0.06);
-  border-color: #e2e8f0;
-}
-
-.card-header {
-  padding: 12px;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #1a3a5f;
-  margin: 0;
-}
-
-.card-subtitle {
-  font-size: 0.8125rem;
-  color: #64748b;
-  margin-top: 0.25rem;
-}
-
-.card-body {
-  padding: 12px;
-}
-
-.no-padding .card-body {
-  padding: 0;
-}
-
-/* Only clip table-containing cards, not cards with dropdowns */
-.base-card.no-padding {
-  overflow: hidden;
-}
-
-.card-footer {
-  padding: 12px;
-  background: #f8fafc;
-  border-top: 1px solid #f1f5f9;
-}
-</style>

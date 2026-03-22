@@ -1,0 +1,235 @@
+
+> lint
+> eslint "resources/js/**/*.{js,vue}"
+
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/AdminLayout.vue
+  566:14  warning  'e' is defined but never used  no-unused-vars
+  629:14  warning  'e' is defined but never used  no-unused-vars
+  629:17  error    Empty block statement          no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/ClientLayout.vue
+  222:9   warning  'breadcrumbLinks' is assigned a value but never used  no-unused-vars
+  246:14  warning  'e' is defined but never used                         no-unused-vars
+  246:17  error    Empty block statement                                 no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/Layout.vue
+  18:14  warning  'e' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/MeasurementTable.vue
+  60:30  warning  Prop "labels" should define at least its type      vue/require-prop-types
+  60:40  warning  Prop "modelValue" should define at least its type  vue/require-prop-types
+  60:54  warning  Prop "isRtl" should define at least its type       vue/require-prop-types
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/Orders/TechPack/FactoryNotes.vue
+  4:42  warning  'v-html' directive can lead to XSS attack  vue/no-v-html
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/Orders/TechPack/ProductSpecifications.vue
+  45:9  warning  'props' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/Orders/TechPackLayout.vue
+  164:9  warning  'totalQuantity' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/Orders/TechPackModal.vue
+  110:24  warning  'onMounted' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/components/PLM/ModelAnatomyTable.vue
+  125:27  warning  'computed' is defined but never used                                   no-unused-vars
+  169:29  warning  'idx' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  180:14  warning  'e' is defined but never used                                          no-unused-vars
+  180:17  error    Empty block statement                                                  no-empty
+  216:14  warning  'e' is defined but never used                                          no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/composables/useLang.js
+  10:8  warning  'axios' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/utils/permissions.js
+  215:12  warning  'e' is defined but never used  no-unused-vars
+  242:16  warning  'e' is defined but never used  no-unused-vars
+  252:12  warning  'e' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Categories.vue
+  193:38  warning  'computed' is defined but never used  no-unused-vars
+  266:14  warning  'e' is defined but never used         no-unused-vars
+  284:16  warning  'e' is defined but never used         no-unused-vars
+  284:19  error    Empty block statement                 no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Clients/ClientDetail.vue
+  163:28  warning  'computed' is defined but never used  no-unused-vars
+  188:14  warning  'e' is defined but never used         no-unused-vars
+  188:17  error    Empty block statement                 no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Clients/ClientList.vue
+  207:14  warning  'e' is defined but never used  no-unused-vars
+  207:17  error    Empty block statement          no-empty
+  216:14  warning  'e' is defined but never used  no-unused-vars
+  216:17  error    Empty block statement          no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Dashboard.vue
+  234:14  warning  'e' is defined but never used                   no-unused-vars
+  291:9   warning  'IconUsers' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Designs/DesignCreate.vue
+   62:27  warning  'computed' is defined but never used  no-unused-vars
+  116:14  warning  'e' is defined but never used         no-unused-vars
+  116:17  error    Empty block statement                 no-empty
+  141:14  warning  'e' is defined but never used         no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Designs/DesignDetail.vue
+  171:28  warning  'computed' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Designs/DesignList.vue
+   98:17  warning  'computed' is defined but never used  no-unused-vars
+  118:14  warning  'e' is defined but never used         no-unused-vars
+  118:17  error    Empty block statement                 no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Fabrics.vue
+  272:14  warning  'e' is defined but never used  no-unused-vars
+  291:16  warning  'e' is defined but never used  no-unused-vars
+  291:19  error    Empty block statement          no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Login.vue
+   92:27  warning  'onMounted' is defined but never used  no-unused-vars
+  127:16  warning  'e' is defined but never used          no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/MeasurementTemplates.vue
+  649:14  warning  'e' is defined but never used  no-unused-vars
+  649:17  error    Empty block statement          no-empty
+  656:14  warning  'e' is defined but never used  no-unused-vars
+  656:17  error    Empty block statement          no-empty
+  673:14  warning  'e' is defined but never used  no-unused-vars
+  673:17  error    Empty block statement          no-empty
+  687:14  warning  'e' is defined but never used  no-unused-vars
+  765:14  warning  'e' is defined but never used  no-unused-vars
+  786:14  warning  'e' is defined but never used  no-unused-vars
+  786:17  error    Empty block statement          no-empty
+  800:14  warning  'e' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Messages.vue
+  178:14  warning  'e' is defined but never used  no-unused-vars
+  178:17  error    Empty block statement          no-empty
+  194:14  warning  'e' is defined but never used  no-unused-vars
+  194:17  error    Empty block statement          no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Components/OrderActions.vue
+  110:9  warning  'router' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Components/OrderHeader.vue
+  79:11  warning  'isRtl' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/OrderCreate.vue
+  930:18  warning  'e' is defined but never used               no-unused-vars
+  938:11  warning  'trims' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/OrderDetail.vue
+  1458:10  warning  'BaseCard' is defined but never used                        no-unused-vars
+  1460:10  warning  'BaseInput' is defined but never used                       no-unused-vars
+  1462:10  warning  'ModelAnatomyTable' is defined but never used               no-unused-vars
+  1463:10  warning  'MarkerConsumption' is defined but never used               no-unused-vars
+  1472:9   warning  'props' is assigned a value but never used                  no-unused-vars
+  1561:9   warning  'setTab' is assigned a value but never used                 no-unused-vars
+  1567:9   warning  'showTechModal' is assigned a value but never used          no-unused-vars
+  1569:9   warning  'savingTech' is assigned a value but never used             no-unused-vars
+  1585:9   warning  'collapsed' is assigned a value but never used              no-unused-vars
+  1631:9   warning  'formatSizes' is assigned a value but never used            no-unused-vars
+  1660:9   warning  'saveMarker' is assigned a value but never used             no-unused-vars
+  1760:9   warning  'saveProductionDetails' is assigned a value but never used  no-unused-vars
+  1950:9   warning  'formatDate' is assigned a value but never used             no-unused-vars
+  1956:9   warning  'formatFullDate' is assigned a value but never used         no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/OrderList.vue
+  714:10  warning  'draggable' is defined but never used                                              no-unused-vars
+  834:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  841:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  871:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Tabs/OrderConstruction.vue
+   99:12  warning  'computed' is defined but never used        no-unused-vars
+  103:9   warning  'props' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Tabs/OrderDesign.vue
+  130:9  warning  'props' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Tabs/OrderMaterials.vue
+  130:10  warning  'BaseInput' is defined but never used       no-unused-vars
+  132:9   warning  'props' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Tabs/OrderMeasurements.vue
+  65:33  warning  'size' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Tabs/OrderNotes.vue
+   6:20  error    Unexpected mutation of "form" prop          vue/no-mutating-props
+  48:9   warning  'props' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Tabs/OrderOverview.vue
+  76:12  warning  'computed' is defined but never used        no-unused-vars
+  80:9   warning  'props' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Orders/Tabs/OrderPackaging.vue
+  89:9  warning  'props' is assigned a value but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Production/ProductionQueue.vue
+  157:38  warning  'computed' is defined but never used  no-unused-vars
+  232:14  warning  'e' is defined but never used         no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Products/ProductList.vue
+  206:38  warning  'computed' is defined but never used  no-unused-vars
+  234:16  warning  'e' is defined but never used         no-unused-vars
+  234:19  error    Empty block statement                 no-empty
+  260:14  warning  'e' is defined but never used         no-unused-vars
+  260:17  error    Empty block statement                 no-empty
+  296:14  warning  'e' is defined but never used         no-unused-vars
+  296:17  error    Empty block statement                 no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Profile.vue
+  177:27  warning  'computed' is defined but never used  no-unused-vars
+  282:14  warning  'e' is defined but never used         no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Register.vue
+  176:27  warning  'onMounted' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Settings/Fits.vue
+  292:14  warning  'e' is defined but never used  no-unused-vars
+  310:16  warning  'e' is defined but never used  no-unused-vars
+  310:19  error    Empty block statement          no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Settings/ItemTypes.vue
+  237:14  warning  'e' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Settings/PermissionsMatrix.vue
+  269:10  warning  'BaseCard' is defined but never used  no-unused-vars
+  273:5   warning  'MODULES' is defined but never used   no-unused-vars
+  274:5   warning  'ACTIONS' is defined but never used   no-unused-vars
+  278:38  warning  'watch' is defined but never used     no-unused-vars
+  524:14  warning  'e' is defined but never used         no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Settings/Roles.vue
+  216:5   warning  'ROLE_INFO' is defined but never used         no-unused-vars
+  217:5   warning  'ROLE_PERMISSIONS' is defined but never used  no-unused-vars
+  218:5   warning  'MODULES' is defined but never used           no-unused-vars
+  219:5   warning  'ACTIONS' is defined but never used           no-unused-vars
+  267:14  warning  'e' is defined but never used                 no-unused-vars
+  267:17  error    Empty block statement                         no-empty
+  292:14  warning  'e' is defined but never used                 no-unused-vars
+  312:14  warning  'e' is defined but never used                 no-unused-vars
+  312:17  error    Empty block statement                         no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Settings/Settings.vue
+  107:17  warning  'computed' is defined but never used  no-unused-vars
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Users/UserList.vue
+  312:23  warning  'ROLES' is defined but never used  no-unused-vars
+  369:14  warning  'e' is defined but never used      no-unused-vars
+  369:17  error    Empty block statement              no-empty
+  424:14  warning  'e' is defined but never used      no-unused-vars
+  441:14  warning  'e' is defined but never used      no-unused-vars
+  441:17  error    Empty block statement              no-empty
+  456:16  warning  'e' is defined but never used      no-unused-vars
+  456:19  error    Empty block statement              no-empty
+
+/home/lag/Desktop/PG/Tech Draft/resources/js/views/Welcome.vue
+  324:17  warning  'computed' is defined but never used   no-unused-vars
+  324:27  warning  'onMounted' is defined but never used  no-unused-vars
+
+✖ 138 problems (26 errors, 112 warnings)
+

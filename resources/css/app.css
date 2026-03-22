@@ -1,75 +1,32 @@
+@import 'tailwindcss';
+
 @theme {
-    --font-sans: 'Instrument Sans', 'Noto Sans Arabic', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-sans: 'Inter', 'Instrument Sans', 'Noto Sans Arabic', ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
 }
 
-:root {
-  /* Global Color System */
-  --primary-color: #0f5bd3;
-  --primary-dark: #0a3fa1;
-  --primary-glow: rgba(15, 91, 211, 0.15);
-
-  --text-primary: #1a1a1a;
-  --text-secondary: #4a4a4a;
-  --text-muted: #6b7280;
-
-  --border-color: #d9dee7;
-  --border-field: #cfd6e4;
-  --border-card: #e5eaf2;
-
-  --background-main: #ffffff;
-  --background-card: #ffffff;
-  --background-light: #f8fafc;
-  --background-header: #f1f5f9;
-
-  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-sm: 0 2px 6px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.06), 0 2px 6px -1px rgba(0,0,0,0.03);
-  
-  --radius-xl: 0.875rem;
-  --radius-2xl: 1.25rem;
-  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: 0.15s ease-out;
+@layer base {
+  body {
+    @apply bg-neutral-50 font-sans text-neutral-900 antialiased selection:bg-neutral-200 selection:text-neutral-900;
+  }
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    background-color: var(--background-light);
-    color: var(--text-primary);
-    font-family: var(--font-sans);
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-}
-
-/* Typography Contrast */
-h1, h2, h3, h4, h5, h6 {
-    color: var(--text-primary);
-}
-
-p {
-    color: var(--text-secondary);
-}
-
-/* RTL Support utility */
 .rtl {
-    direction: rtl;
-    text-align: right;
+  direction: rtl;
+  text-align: right;
 }
 
 .ltr {
-    direction: ltr;
-    text-align: left;
+  direction: ltr;
+  text-align: left;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Minimal Style */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -77,273 +34,32 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-  border: 2px solid var(--background-light);
+  @apply rounded-full bg-neutral-300;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  @apply bg-neutral-400;
 }
 
-/* Components Styling */
-.card {
-    background: var(--background-card);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-sm);
-    padding: 1.5rem;
-    border: 1px solid var(--border-card);
-    transition: all var(--transition-fast);
+/* Legacy Table Styling (In case some are un-refactored) */
+.modern-table {
+  @apply w-full border-collapse text-left;
 }
 
-button {
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 600;
-    transition: all var(--transition-fast);
-}
-
-/* Primary Button Standout */
-.btn-primary {
-    background-color: var(--primary-color);
-    color: #ffffff;
-    font-weight: 600;
-}
-
-.btn-primary:hover {
-    background-color: var(--primary-dark);
-}
-
-/* Input Fields and Dropdowns Clarity */
-input, select, textarea {
-    border: 1px solid var(--border-field);
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.9375rem;
-    width: 100%;
-    background: white;
-    color: var(--text-primary);
-    transition: all var(--transition-fast);
-    font-family: inherit;
-}
-
-input::placeholder {
-    color: var(--text-muted);
-}
-
-input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px var(--primary-glow);
-}
-
-/* Table Readability */
 .modern-table thead th {
-    background-color: var(--background-header);
-    color: var(--text-primary); /* Column titles darker than row text */
-    font-weight: 700;
+  @apply border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-[11px] font-semibold tracking-wider text-neutral-500 uppercase;
 }
 
 .modern-table tbody tr {
-    color: var(--text-secondary);
+  @apply transition-colors duration-150;
 }
 
-.modern-table tbody tr:hover {
-    background-color: #f8fafc;
+.modern-table tbody td {
+  @apply border-b border-neutral-100 bg-white px-4 py-3 text-[13px] text-neutral-700;
 }
 
-.animate-fade-in {
-    animation: fadeIn 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.table-responsive {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ============================================
-   GLOBAL MOBILE OVERFLOW FIX
-   ============================================ */
-
-html {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-body {
-  max-width: 100%;
-  overflow-x: hidden;
-  position: relative;
-}
-
-/* All elements must respect viewport width */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  min-width: 0; /* Prevents flex children from overflowing */
-}
-
-/* Media never overflows */
-img, video, iframe, svg {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Ensure all top-level containers never overflow */
-.layout,
-.main-body,
-.page-content,
-.page-container,
-.client-portal,
-.portal-content,
-.portal-container {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Inputs & fields always fit their container */
-input, select, textarea {
-  max-width: 100%;
-}
-
-/* Cards never exceed their container */
-.card,
-.base-card,
-.info-card,
-.filter-card,
-.table-card {
-  max-width: 100%;
-  overflow: hidden;
-}
-
-/* ============================================
-   RESPONSIVE BREAKPOINTS - GLOBAL
-   ============================================ */
-
-@media (max-width: 768px) {
-
-  /* Reset any large fixed widths */
-  .page-container,
-  .portal-container,
-  .nav-container {
-    max-width: 100% !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-
-  /* Table overflows only within a scrollable wrapper */
-  table {
-    min-width: 500px;
-  }
-
-  /* Grid layouts collapse to single column */
-  .stats-grid,
-  .detail-grid,
-  .spec-row,
-  .form-grid-2 {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Header stats row scrolls horizontally only */
-  .stats-cards-row {
-    display: flex !important;
-    overflow-x: auto !important;
-    gap: 0.75rem !important;
-    padding-bottom: 0.5rem;
-    flex-wrap: nowrap !important;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .mini-stat-card {
-    flex: 0 0 140px !important;
-    min-width: 140px !important;
-  }
-
-  /* Pipeline columns scroll horizontally only */
-  .pipeline-container {
-    overflow-x: auto;
-  }
-
-  /* Buttons are full width on mobile */
-  .header-actions {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  /* Client navbar links hidden on mobile - rely on dropdown */
-  .nav-links {
-    display: none !important;
-  }
-
-  /* Filter grids stack */
-  .filter-actions-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Page headers stack */
-  .page-header {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 1rem !important;
-  }
-
-  /* Order detail grid */
-  .order-detail-grid,
-  .detail-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Modals fit the screen */
-  .modal-card {
-    width: 92vw !important;
-    max-width: 420px;
-    padding: 1.5rem !important;
-  }
-
-  /* Status menu doesn't overflow screen */
-  .status-menu-floating {
-    left: 0 !important;
-    transform: none !important;
-    right: 0 !important;
-    margin: 0 auto;
-    max-width: 100%;
-  }
-
-  /* Flex actions wrap properly */
-  .flex-actions-cell {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-
-  /* Smaller padding on very small screens */
-  .page-content,
-  .portal-content {
-    padding: 0.75rem !important;
-    padding-bottom: 80px !important;
-  }
-
-  /* Card padding reduced */
-  .card,
-  .base-card,
-  .info-card {
-    padding: 1rem !important;
-  }
-
-  /* Typography scaling */
-  .page-title {
-    font-size: 1.375rem !important;
-  }
-
-  h1 { font-size: 1.5rem; }
-  h2 { font-size: 1.25rem; }
+.modern-table tbody tr:hover td {
+  @apply bg-neutral-50/50;
 }

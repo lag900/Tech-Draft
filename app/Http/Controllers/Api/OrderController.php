@@ -237,6 +237,8 @@ class OrderController extends Controller
                         'point_of_measure' => $measure['point'],
                         'dimension_value' => $numericVal,
                         'unit' => $measure['unit'] ?? 'cm',
+                        'grading' => isset($measure['grading']) && is_array($measure['grading']) ? $measure['grading'] : null,
+                        'tolerance' => $measure['tolerance'] ?? null,
                     ]);
                 }
             }

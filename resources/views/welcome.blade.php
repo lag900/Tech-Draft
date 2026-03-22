@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>تك درافت - منصة تصنيع الملابس</title>
+        <title>Tec Draft</title>
         <link rel="icon" type="image/png" href="/images/logo.png">
         
         <!-- Arabic + Latin Fonts (Tajawal for Arabic, Instrument Sans for latin) -->

@@ -1,132 +1,91 @@
 <template>
-  <button 
-    :class="['base-btn', `btn-${variant}`, `btn-${size}`, { 'btn-loading': loading, 'btn-block': block }]"
+  <button
+    :class="[
+      'inline-flex items-center justify-center font-medium tracking-tight transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
+      variantClasses,
+      sizeClasses,
+      block ? 'w-full flex-1' : '',
+    ]"
     :disabled="disabled || loading"
     :type="type"
     @click="$emit('click', $event)"
   >
-    <div v-if="loading" class="spinner"></div>
-    <span v-else class="btn-content">
+    <svg
+      v-if="loading"
+      class="mr-2 -ml-1 h-4 w-4 animate-spin text-current"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        class="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="4"
+      ></circle>
+      <path
+        class="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
+
+    <div class="flex items-center gap-2">
       <slot name="icon-left" />
       <slot />
       <slot name="icon-right" />
-    </span>
+    </div>
   </button>
 </template>
 
 <script setup>
-defineProps({
-  variant: {
-    type: String,
-    default: 'primary' // primary, secondary, danger, white, ghost
-  },
-  size: {
-    type: String,
-    default: 'md' // sm, md, lg
-  },
-  loading: Boolean,
-  disabled: Boolean,
-  block: Boolean,
-  type: {
-    type: String,
-    default: 'button'
-  }
-});
-defineEmits(['click']);
+  import { computed } from 'vue';
+
+  const props = defineProps({
+    variant: {
+      type: String,
+      default: 'primary',
+    },
+    size: {
+      type: String,
+      default: 'md',
+    },
+    loading: Boolean,
+    disabled: Boolean,
+    block: Boolean,
+    type: {
+      type: String,
+      default: 'button',
+    },
+  });
+
+  defineEmits(['click']);
+
+  const variantClasses = computed(() => {
+    const map = {
+      primary:
+        'bg-gradient-to-b from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] border border-blue-600 focus-visible:ring-blue-500',
+      secondary:
+        'bg-blue-50 text-blue-900 border border-blue-100 hover:bg-blue-100 hover:text-blue-950 focus-visible:ring-blue-200 shadow-sm',
+      danger:
+        'bg-red-600 text-white hover:bg-red-700 shadow-[0_2px_8px_-2px_rgba(220,38,38,0.5)] border border-transparent focus-visible:ring-red-600',
+      white:
+        'bg-white text-blue-800 border border-blue-200 hover:border-blue-300 hover:bg-blue-50/50 shadow-[0_2px_8px_-2px_rgba(37,99,235,0.1)] focus-visible:ring-blue-200',
+      ghost:
+        'bg-transparent text-blue-600 hover:text-blue-800 hover:bg-blue-50 border border-transparent focus-visible:ring-blue-100',
+      flat: 'bg-blue-50/50 text-blue-700 hover:bg-blue-100 border-none shadow-none focus-visible:ring-blue-200',
+    };
+    return map[props.variant] || map.primary;
+  });
+
+  const sizeClasses = computed(() => {
+    const map = {
+      sm: 'px-3 py-1.5 text-xs rounded-md',
+      md: 'px-4 py-2 text-sm rounded-lg',
+      lg: 'px-5 py-2.5 text-base rounded-lg',
+    };
+    return map[props.size] || map.md;
+  });
 </script>
-
-<style scoped>
-.base-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  white-space: nowrap;
-  vertical-align: middle;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  gap: 0.5rem;
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid transparent;
-}
-
-.btn-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Variants */
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(15, 91, 211, 0.2);
-}
-
-.btn-secondary {
-  background: #f1f5f9;
-  color: var(--text-primary);
-}
-.btn-secondary:hover:not(:disabled) {
-  background: #e2e8f0;
-}
-
-.btn-white {
-  background: white;
-  border-color: var(--border-color);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
-}
-.btn-white:hover:not(:disabled) {
-  border-color: #cbd5e1;
-  background: #f8fafc;
-}
-
-.btn-danger {
-  background: #ef4444;
-  color: white;
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--text-muted);
-}
-.btn-ghost:hover:not(:disabled) {
-  background: #f8fafc;
-  color: var(--text-primary);
-}
-
-/* Sizes */
-.btn-sm { padding: 0.5rem 0.875rem; font-size: 0.8125rem; }
-.btn-md { padding: 0.625rem 1.25rem; font-size: 0.875rem; }
-.btn-lg { padding: 0.875rem 1.75rem; font-size: 1rem; }
-
-.btn-block { width: 100%; }
-
-.btn-loading {
-  position: relative;
-  cursor: wait;
-}
-
-.spinner {
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-radius: 50%;
-  border-top-color: currentColor;
-  animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-</style>

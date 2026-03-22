@@ -23,57 +23,57 @@
 </template>
 
 <script setup>
-defineProps({
-  efficiency: [String, Number],
-  consumption: [String, Number],
-  width: [String, Number],
-  length: [String, Number]
-});
+  defineProps({
+    efficiency: [String, Number],
+    consumption: [String, Number],
+    width: [String, Number],
+    length: [String, Number],
+  });
 </script>
 
 <style scoped>
-.marker-consumption {
-  margin-bottom: 25px;
-}
+  .marker-consumption {
+    margin-bottom: 25px;
+  }
 
-.section-header {
-  font-size: 11px;
-  font-weight: 900;
-  color: #666;
-  margin-bottom: 12px;
-  text-transform: uppercase;
-}
+  .section-header {
+    font-size: 11px;
+    font-weight: 900;
+    color: #666;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-}
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+  }
 
-.stat-card {
-  background: #fbfbfb;
-  border: 1px solid #ddd;
-  padding: 12px;
-  border-radius: 8px;
-  text-align: center;
-  border-bottom: 3px solid #eee;
-}
+  .stat-card {
+    background: #fbfbfb;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border-bottom: 3px solid #eee;
+  }
 
-.stat-card.highlight {
-  border-bottom-color: #4f46e5;
-}
+  .stat-card.highlight {
+    border-bottom-color: #4f46e5;
+  }
 
-.label {
-  display: block;
-  font-size: 8px;
-  font-weight: 800;
-  color: #666;
-  margin-bottom: 4px;
-}
+  .label {
+    display: block;
+    font-size: 8px;
+    font-weight: 800;
+    color: #666;
+    margin-bottom: 4px;
+  }
 
-.value {
-  font-size: 16px;
-  font-weight: 900;
-  color: #000;
-}
+  .value {
+    font-size: 16px;
+    font-weight: 900;
+    color: #000;
+  }
 </style>

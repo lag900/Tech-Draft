@@ -19,7 +19,7 @@ class MeasurementTemplateController extends Controller
         $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'item_type_id' => 'nullable|exists:item_types,id',
-            'labels' => 'required|array',
+            'labels' => 'present|array',
         ]);
 
         return MeasurementTemplate::updateOrCreate(
@@ -31,14 +31,16 @@ class MeasurementTemplateController extends Controller
         );
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        // Try item_type_id first, then id
+        // Try item_type_id first, fallback strictly to id
         $template = MeasurementTemplate::where('item_type_id', $id)
-            ->orWhere('category_id', $id)
-            ->orWhere('id', $id)
             ->first();
             
+        if (!$template && $request->has('by_id')) {
+            $template = MeasurementTemplate::find($id);
+        }
+
         if (!$template) {
             return response()->json(['message' => 'Not found'], 404);
         }

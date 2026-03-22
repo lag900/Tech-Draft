@@ -30,5 +30,5 @@ export const countries = [
   { value: 'CA', en: 'Canada', ar: 'كندا' },
   { value: 'AU', en: 'Australia', ar: 'أستراليا' },
   { value: 'BR', en: 'Brazil', ar: 'البرازيل' },
-  { value: 'RU', en: 'Russia', ar: 'روسيا' }
+  { value: 'RU', en: 'Russia', ar: 'روسيا' },
 ];

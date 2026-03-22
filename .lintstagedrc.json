@@ -1,0 +1,12 @@
+{
+  "resources/js/**/*.{js,vue}": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "resources/css/**/*.css": [
+    "prettier --write"
+  ],
+  "resources/js/components/**/*.vue": [
+    "vitest related --run"
+  ]
+}
