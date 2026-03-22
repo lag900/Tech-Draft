@@ -17,20 +17,55 @@
 
         <div class="nav-actions">
           <template v-if="user">
-            <span v-if="!isRtl" class="user-greeting">Hi, {{ user.name.split(' ')[0] }}</span>
-            <button class="nav-link-btn" @click="logout">{{ t('Logout', 'تسجيل خروج') }}</button>
+            <!-- User Greeting -->
+            <div class="mr-1 flex items-center text-sm rtl:ml-1">
+              <span class="max-w-[80px] truncate font-semibold text-slate-800 sm:max-w-[120px]">
+                {{ isRtl ? 'مرحباً،' : 'Hi,' }} {{ user.name.split(' ')[0] }}
+                <span class="inline-block">👋</span>
+              </span>
+            </div>
+
+            <!-- Standard Horizontal CTA Button -->
             <router-link
               :to="user.role === 'client' ? '/orders' : '/dashboard'"
-              class="primary-btn"
+              class="flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md md:px-4 md:py-2 md:text-sm"
             >
-              {{ t('Go to App', 'انتقل للتطبيق') }}
+              <span>{{ t('Go to App', 'التطبيق') }}</span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                class="ml-1.5 rtl:mr-1.5 rtl:rotate-180"
+              >
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+              </svg>
             </router-link>
+
+            <button
+              class="ml-2 hidden text-sm font-semibold whitespace-nowrap text-slate-500 transition-colors hover:text-red-500 md:block rtl:mr-2"
+              @click="logout"
+            >
+              {{ t('Logout', 'خروج') }}
+            </button>
           </template>
           <template v-else>
-            <router-link to="/login" class="nav-link">{{ t('Login', 'تسجيل الدخول') }}</router-link>
-            <router-link to="/register" class="primary-btn">{{
-              t('Register Now', 'اشترك الآن')
-            }}</router-link>
+            <router-link
+              to="/login"
+              class="mr-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-800 rtl:ml-2"
+            >
+              {{ t('Login', 'دخول') }}
+            </router-link>
+            <router-link
+              to="/register"
+              class="flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold whitespace-nowrap text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md md:px-4 md:py-2 md:text-sm"
+            >
+              {{ t('Register', 'اشترك') }}
+            </router-link>
           </template>
           <button class="lang-toggle-minimal" @click="toggleLang">
             {{ isRtl ? 'EN' : 'AR' }}
@@ -391,16 +426,6 @@
     align-items: center;
   }
 
-  @media (max-width: 768px) {
-    .hero-grid {
-      grid-template-columns: 1fr;
-      text-align: center;
-    }
-    .hero-btns {
-      justify-content: center;
-    }
-  }
-
   .hero-title {
     font-size: 3.5rem;
     font-weight: 900;
@@ -444,6 +469,79 @@
     font-size: 1.125rem;
     border: 2px solid #e2e8f0;
     transition: all 0.2s;
+  }
+
+  /* Mobile Overrides (max-width: 768px) */
+  @media (max-width: 768px) {
+    .navbar {
+      height: 70px;
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .logo-text {
+      display: none;
+    }
+
+    .nav-actions {
+      gap: 0.5rem;
+    }
+
+    .hero-section {
+      padding: 4rem 0 3rem 0;
+      /* Subtle background gradient enhancement for mobile */
+      background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
+    }
+
+    .hero-grid {
+      grid-template-columns: 1fr;
+      text-align: center;
+      gap: 3rem;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0.5rem;
+    }
+
+    .hero-title {
+      font-size: 1.875rem; /* ~30px */
+      line-height: 1.35;
+      margin-bottom: 1rem;
+      /* Helps break long Arabic texts gracefully */
+      word-wrap: break-word;
+      max-width: 100%;
+    }
+
+    .hero-subtitle {
+      font-size: 0.9375rem; /* ~15px */
+      color: #6b7280; /* Tailwind gray-500 */
+      line-height: 1.75;
+      margin-bottom: 2rem;
+      max-width: 100%;
+      padding: 0 1rem;
+    }
+
+    .hero-btns {
+      flex-direction: column;
+      width: 100%;
+      gap: 0.875rem;
+      padding: 0 1rem;
+    }
+
+    .primary-btn-lg,
+    .secondary-btn-lg {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 1.125rem 2rem;
+    }
+
+    .primary-btn-lg {
+      background: linear-gradient(to right, #0ea5e9, #0284c7);
+      box-shadow: 0 12px 20px -8px rgba(14, 165, 233, 0.5);
+    }
   }
 
   .visual-card {
