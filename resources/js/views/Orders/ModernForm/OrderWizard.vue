@@ -258,7 +258,15 @@
         promises.push(axios.get('/api/clients', { headers }));
       }
       const [catRes, fabRes, sugRes, clientRes] = await Promise.all(promises);
-      categories.value = (catRes.data || []).map((c) => ({ id: c.id, name: c.name }));
+
+      console.log('Categories API response:', catRes.data);
+      categories.value = (catRes.data || []).map((c) => ({
+        label: c.name,
+        value: c.id,
+        // Keep these if SearchableSelect still needs them
+        id: c.id,
+        name: c.name,
+      }));
       fabricList.value = (fabRes.data || []).map((f) => ({ id: f.id, name: f.name }));
       templateSuggestions.value = sugRes.data?.data || sugRes.data || [];
       if (clientRes)

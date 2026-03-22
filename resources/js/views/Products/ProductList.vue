@@ -61,8 +61,59 @@
         </div>
       </BaseCard>
 
+      <!-- Loading Skeleton -->
+      <div v-if="loading" class="products-grid">
+        <BaseCard v-for="i in 6" :key="i" class="product-card opacity-70" no-padding>
+          <div class="product-image animate-pulse bg-slate-200"></div>
+          <div class="product-info flex animate-pulse flex-col justify-between">
+            <div>
+              <div class="mb-4 flex justify-between">
+                <div class="h-4 w-16 rounded bg-slate-200"></div>
+                <div class="h-4 w-12 rounded-full bg-slate-200"></div>
+              </div>
+              <div class="mb-2 h-6 w-3/4 rounded bg-slate-200"></div>
+              <div class="mb-4 h-4 w-1/2 rounded bg-slate-200"></div>
+            </div>
+            <div class="mt-auto flex justify-between border-t border-slate-100 pt-4">
+              <div class="h-5 w-20 rounded bg-slate-200"></div>
+              <div class="flex gap-2">
+                <div class="h-8 w-8 rounded bg-slate-200"></div>
+                <div class="h-8 w-8 rounded bg-slate-200"></div>
+              </div>
+            </div>
+          </div>
+        </BaseCard>
+      </div>
+
+      <!-- Error State -->
+      <BaseCard v-else-if="isError" class="empty-state-card">
+        <div class="empty-v">
+          <svg
+            width="64"
+            height="64"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ef4444"
+            stroke-width="1.5"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <h2 class="mt-4 font-bold text-red-900">
+            {{ t('Failed to load products', 'فشل تحميل المنتجات') }}
+          </h2>
+          <BaseButton
+            class="mt-4 !bg-red-50 !text-red-600 shadow-none hover:!bg-red-100"
+            @click="fetchProducts"
+          >
+            {{ t('Try Again', 'أعد المحاولة') }}
+          </BaseButton>
+        </div>
+      </BaseCard>
+
       <!-- Products Grid -->
-      <div v-if="products.length" class="products-grid">
+      <div v-else-if="products && products.length" class="products-grid">
         <BaseCard v-for="product in products" :key="product.id" class="product-card" no-padding>
           <div class="product-image">
             <img v-if="product.image_path" :src="product.image_path" :alt="product.name" />
@@ -179,8 +230,8 @@
             </div>
             <select v-else v-model="form.category_id" class="custom-select">
               <option value="">{{ t('Select Category', 'اختر التصنيف') }}</option>
-              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                {{ cat.name }}
+              <option v-for="cat in categories" :key="cat.value" :value="cat.value">
+                {{ cat.label }}
               </option>
             </select>
           </div>
@@ -230,16 +281,18 @@
   import BaseInput from '../../components/UI/BaseInput.vue';
   import ConfirmModal from '../../components/UI/ConfirmModal.vue';
   import { hasPermission } from '../../utils/permissions';
-  import { ref, reactive, onMounted, watch } from 'vue';
+  import { ref, reactive, onMounted, onUnmounted, watch } from 'vue';
   import axios from 'axios';
 
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
   const can = (perm) => hasPermission(user.value, perm);
   const { isRtl, t } = useLang();
 
-  const products = ref([]);
+  const products = ref(null);
   const categories = ref([]);
   const loading = ref(true);
+  const isError = ref(false);
+  const isMounted = ref(false);
   const loadingCategories = ref(false);
   const categoriesError = ref(false);
   const saving = ref(false);
@@ -283,17 +336,24 @@
   });
 
   const fetchProducts = async () => {
+    if (!localStorage.getItem('auth_token')) return;
     loading.value = true;
+    isError.value = false;
     try {
       const res = await axios.get('/api/products', {
         params: filters,
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
       });
+      if (!isMounted.value) return;
       products.value = res.data.data || res.data;
     } catch (e) {
-      console.warn(e);
+      console.error(e);
+      if (!isMounted.value) return;
+      isError.value = true;
+      products.value = [];
+    } finally {
+      if (isMounted.value) loading.value = false;
     }
-    loading.value = false;
   };
 
   const fetchCategories = async () => {
@@ -303,8 +363,15 @@
       const res = await axios.get('/api/categories?status=active', {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
       });
-      console.log('[ProductList] Categories loaded:', res.data); // Log API response for debugging
-      categories.value = Array.isArray(res.data) ? res.data : res.data.data || [];
+      console.log('Categories API response:', res.data); // Log API response in frontend
+      const rawData = Array.isArray(res.data) ? res.data : res.data.data || [];
+      categories.value = rawData.map((c) => ({
+        label: c.name,
+        value: c.id,
+        // Keep id/name for fallback compatibility just in case
+        id: c.id,
+        name: c.name,
+      }));
     } catch (e) {
       console.error('[ProductList] Failed to load categories', e);
       categoriesError.value = true;
@@ -314,8 +381,13 @@
   };
 
   onMounted(() => {
+    isMounted.value = true;
     fetchProducts();
     if (can('categories.view')) fetchCategories();
+  });
+
+  onUnmounted(() => {
+    isMounted.value = false;
   });
   watch(filters, fetchProducts, { deep: true });
 
