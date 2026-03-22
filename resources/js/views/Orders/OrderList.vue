@@ -478,8 +478,52 @@
             </div>
           </div>
 
+          <!-- Loading Skeleton -->
+          <div v-if="loading && filteredOrders.length === 0" class="border-t border-slate-100 p-6">
+            <div v-for="i in 5" :key="i" class="mb-6 flex animate-pulse items-center gap-4">
+              <div class="h-12 w-16 rounded-xl bg-slate-100"></div>
+              <div class="flex-1 space-y-3">
+                <div class="h-4 w-1/3 rounded-md bg-slate-200"></div>
+                <div class="h-3 w-1/4 rounded-md bg-slate-100"></div>
+              </div>
+              <div class="h-8 w-24 rounded-full bg-slate-100"></div>
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="isError && !loading" class="border-t border-red-50 py-20 text-center">
+            <div
+              class="empty-state-icon mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
+                stroke-width="2.5"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h3 class="mb-1 font-extrabold text-red-900">
+              {{ t('Failed to load data', 'فشل تحميل البيانات') }}
+            </h3>
+            <button
+              class="mt-4 rounded-lg bg-red-50 px-6 py-2.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
+              @click="fetchOrders"
+            >
+              {{ t('Try Again', 'أعد المحاولة') }}
+            </button>
+          </div>
+
           <!-- Empty State -->
-          <div v-if="filteredOrders.length === 0" class="border-t border-gray-50 py-20 text-center">
+          <div
+            v-else-if="filteredOrders.length === 0 && !loading"
+            class="border-t border-gray-50 py-20 text-center"
+          >
             <div class="empty-state-icon mb-4">
               <svg
                 width="56"
@@ -667,7 +711,13 @@
                 </div>
               </template>
             </Draggable>
-            <div v-if="!ordersByStatusComputed[status]?.length" class="pipeline-empty-state">
+            <div v-if="loading && ordersByStatusComputed[status]?.length === 0" class="p-4">
+              <div class="h-20 w-full animate-pulse rounded-2xl bg-slate-100"></div>
+            </div>
+            <div
+              v-else-if="!ordersByStatusComputed[status]?.length && !loading"
+              class="pipeline-empty-state"
+            >
               <svg
                 width="24"
                 height="24"
@@ -928,9 +978,16 @@
   });
 
   const loading = ref(false);
+  const isError = ref(false);
+  const isMounted = ref(false);
+
   const fetchOrders = async () => {
+    // Wait for auth token if not available yet (simulating ensure API is called after auth/token is ready)
+    if (!localStorage.getItem('auth_token')) return;
+
     if (loading.value) return; // Prevent concurrent requests
     loading.value = true;
+    isError.value = false;
 
     try {
       const queryParams = {
@@ -974,6 +1031,7 @@
         sourceInfo = data.data;
       }
 
+      if (!isMounted.value) return;
       orders.value = finalItems;
 
       // Dynamic Pagination Metadata Extraction
@@ -987,9 +1045,13 @@
       );
     } catch (err) {
       console.error('[OrderList] Error details:', err);
+      if (!isMounted.value) return;
+      isError.value = true;
       showToast(t('Failed to load orders.', 'فشل تحميل الطلبات.'), 'error');
     } finally {
-      loading.value = false;
+      if (isMounted.value) {
+        loading.value = false;
+      }
     }
   };
 
@@ -1003,6 +1065,7 @@
   };
 
   onMounted(() => {
+    isMounted.value = true;
     if (!can('orders.view')) return router.push('/dashboard');
     fetchOrders();
     fetchStats();
@@ -1010,6 +1073,8 @@
   });
 
   onUnmounted(() => {
+    isMounted.value = false;
+    window.removeEventListener('resize', updateWidth);
     window.removeEventListener('click', closeStatusModal);
   });
 

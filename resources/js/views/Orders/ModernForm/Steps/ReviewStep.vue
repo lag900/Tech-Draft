@@ -507,7 +507,7 @@
               :key="idx"
               class="relative w-32 shrink-0 overflow-hidden rounded-xl border border-slate-200"
             >
-              <img :src="img.preview" class="h-32 w-full object-cover" />
+              <img :src="img" class="h-32 w-full object-cover" />
               <div
                 class="absolute inset-x-0 bottom-0 truncate bg-black/60 px-1 py-1 text-center text-[10px] font-bold text-white"
               >

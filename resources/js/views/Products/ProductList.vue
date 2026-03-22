@@ -163,10 +163,37 @@
           <BaseInput v-model="form.name" :label="t('Product Name', 'اسم المنتج')" required />
           <BaseInput v-model="form.sku" :label="t('SKU', 'الباركود')" class="mt-2" />
           <BaseInput v-model="form.price" type="number" :label="t('Price', 'السعر')" class="mt-2" />
-          <select v-model="form.status" class="custom-select mt-2">
-            <option value="active">{{ t('Active', 'نشط') }}</option>
-            <option value="inactive">{{ t('Inactive', 'معطل') }}</option>
-          </select>
+
+          <div class="mt-3">
+            <label class="mb-1 block text-sm font-bold text-slate-700">{{
+              t('Category', 'التصنيف')
+            }}</label>
+            <div v-if="loadingCategories" class="text-sm font-medium text-blue-500">
+              {{ t('Loading categories...', 'جاري تحميل التصنيفات...') }}
+            </div>
+            <div v-else-if="categoriesError" class="text-sm font-medium text-red-500">
+              {{ t('Failed to load categories', 'فشل تحميل التصنيفات') }}
+              <button class="underline" @click="fetchCategories">
+                {{ t('Retry', 'إعادة المحاولة') }}
+              </button>
+            </div>
+            <select v-else v-model="form.category_id" class="custom-select">
+              <option value="">{{ t('Select Category', 'اختر التصنيف') }}</option>
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                {{ cat.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mt-3">
+            <label class="mb-1 block text-sm font-bold text-slate-700">{{
+              t('Status', 'الحالة')
+            }}</label>
+            <select v-model="form.status" class="custom-select">
+              <option value="active">{{ t('Active', 'نشط') }}</option>
+              <option value="inactive">{{ t('Inactive', 'معطل') }}</option>
+            </select>
+          </div>
         </div>
         <template #footer>
           <BaseButton variant="white" @click="showModal = false">{{
@@ -211,7 +238,10 @@
   const { isRtl, t } = useLang();
 
   const products = ref([]);
+  const categories = ref([]);
   const loading = ref(true);
+  const loadingCategories = ref(false);
+  const categoriesError = ref(false);
   const saving = ref(false);
   const showModal = ref(false);
   const editingProduct = ref(null);
@@ -248,6 +278,7 @@
     name: '',
     sku: '',
     price: 0,
+    category_id: '',
     status: 'active',
   });
 
@@ -265,7 +296,27 @@
     loading.value = false;
   };
 
-  onMounted(fetchProducts);
+  const fetchCategories = async () => {
+    loadingCategories.value = true;
+    categoriesError.value = false;
+    try {
+      const res = await axios.get('/api/categories?status=active', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+      });
+      console.log('[ProductList] Categories loaded:', res.data); // Log API response for debugging
+      categories.value = Array.isArray(res.data) ? res.data : res.data.data || [];
+    } catch (e) {
+      console.error('[ProductList] Failed to load categories', e);
+      categoriesError.value = true;
+    } finally {
+      loadingCategories.value = false;
+    }
+  };
+
+  onMounted(() => {
+    fetchProducts();
+    if (can('categories.view')) fetchCategories();
+  });
   watch(filters, fetchProducts, { deep: true });
 
   const openCreateModal = () => {
@@ -273,6 +324,7 @@
     form.name = '';
     form.sku = '';
     form.price = 0;
+    form.category_id = '';
     form.status = 'active';
     showModal.value = true;
   };
@@ -282,6 +334,7 @@
     form.name = p.name;
     form.sku = p.sku;
     form.price = p.price;
+    form.category_id = p.category_id || '';
     form.status = p.status;
     showModal.value = true;
   };

@@ -135,6 +135,7 @@ class OrderController extends Controller
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
             
             // Tech Pack Specific Validations
+            'reference_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'design_front_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'design_back_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'technical_sketch' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
@@ -176,15 +177,21 @@ class OrderController extends Controller
         foreach (['design_front_image', 'design_back_image', 'technical_sketch'] as $fileKey) {
             if ($request->hasFile($fileKey)) {
                 $orderData[$fileKey] = $request->file($fileKey)->store('designs', 'public');
+            } else {
+                unset($orderData[$fileKey]);
             }
         }
 
         if ($request->hasFile('reference_images')) {
             $refPaths = [];
             foreach ($request->file('reference_images') as $file) {
-                $refPaths[] = $file->store('references', 'public');
+                if ($file->isValid()) {
+                    $refPaths[] = $file->store('references', 'public');
+                }
             }
             $orderData['reference_images'] = $refPaths;
+        } else {
+            unset($orderData['reference_images']);
         }
 
         $order = Order::create($orderData);
@@ -266,6 +273,7 @@ class OrderController extends Controller
             }
         }
 
+        Log::info('Order attributes before return: ', $order->getAttributes());
         return $order->load(['images', 'orderColors', 'orderSizes', 'orderMeasurements']);
     }
 

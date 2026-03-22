@@ -646,11 +646,8 @@
         // Go to first step with errors
         if (errors.title || errors.category_id || errors.seasons) currentStep.value = 1;
       } else {
-        showAlert(
-          t('Submission failed: ' + (e.response?.data?.message || e.message), 'فشل الإرسال'),
-          '',
-          'error'
-        );
+        const errMessage = e.response?.data?.message || e.message;
+        showAlert(t('Submission failed: ' + errMessage, 'فشل الإرسال: ' + errMessage), '', 'error');
       }
     } finally {
       loading.value = false;
