@@ -48,12 +48,24 @@
               :key="size.name"
               class="px-4 py-3 text-center text-[13px] text-neutral-600"
             >
-              {{ point.grading ? point.grading[size.name] || '---' : '---' }}
+              {{
+                point.grading &&
+                point.grading[size.name] !== undefined &&
+                point.grading[size.name] !== ''
+                  ? point.grading[size.name]
+                  : '---'
+              }}
             </td>
             <td
               class="border-r border-l border-blue-100/50 bg-blue-50/50 px-4 py-3 text-center text-[13px] font-bold text-blue-700"
             >
-              {{ point.value || point.dimension_value || '---' }}
+              {{
+                point.value !== undefined && point.value !== ''
+                  ? point.value
+                  : point.dimension_value !== undefined && point.dimension_value !== ''
+                    ? point.dimension_value
+                    : '---'
+              }}
             </td>
             <td class="px-4 py-3 text-center text-[13px] font-medium text-neutral-400">
               {{ point.tol || point.tolerance || '0.5' }}

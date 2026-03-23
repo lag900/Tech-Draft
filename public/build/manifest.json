@@ -1,10 +1,6 @@
 {
-  "_BaseTextarea-CmtZTYx_.css": {
-    "file": "assets/BaseTextarea-CmtZTYx_.css",
-    "src": "_BaseTextarea-CmtZTYx_.css"
-  },
-  "_BaseTextarea-Cr1bfkXz.js": {
-    "file": "assets/BaseTextarea-Cr1bfkXz.js",
+  "_BaseTextarea-9y2mXUvE.js": {
+    "file": "assets/BaseTextarea-9y2mXUvE.js",
     "name": "BaseTextarea",
     "imports": [
       "resources/js/app.js"
@@ -12,6 +8,10 @@
     "css": [
       "assets/BaseTextarea-CmtZTYx_.css"
     ]
+  },
+  "_BaseTextarea-CmtZTYx_.css": {
+    "file": "assets/BaseTextarea-CmtZTYx_.css",
+    "src": "_BaseTextarea-CmtZTYx_.css"
   },
   "_pdf-vendor-CBLfnZfd.js": {
     "file": "assets/pdf-vendor-CBLfnZfd.js",
@@ -31,7 +31,7 @@
     "src": "resources/images/logo.png"
   },
   "resources/js/app.js": {
-    "file": "assets/app-CKiUr1C1.js",
+    "file": "assets/app-C5kZDtEd.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -54,7 +54,7 @@
       "resources/js/views/Profile.vue"
     ],
     "css": [
-      "assets/app-BGNzvsSs.css",
+      "assets/app-C6WucATI.css",
       "assets/app-BItLc-sP.css"
     ],
     "assets": [
@@ -62,7 +62,7 @@
     ]
   },
   "resources/js/views/Clients/ClientDetail.vue": {
-    "file": "assets/ClientDetail-B-hmq9mZ.js",
+    "file": "assets/ClientDetail-l42zHxKS.js",
     "name": "ClientDetail",
     "src": "resources/js/views/Clients/ClientDetail.vue",
     "isDynamicEntry": true,
@@ -75,7 +75,7 @@
     ]
   },
   "resources/js/views/Clients/ClientList.vue": {
-    "file": "assets/ClientList-DRmijEiT.js",
+    "file": "assets/ClientList-D31Q-xvn.js",
     "name": "ClientList",
     "src": "resources/js/views/Clients/ClientList.vue",
     "isDynamicEntry": true,
@@ -88,13 +88,13 @@
     ]
   },
   "resources/js/views/Designs/DesignCreate.vue": {
-    "file": "assets/DesignCreate-9PuED7Bb.js",
+    "file": "assets/DesignCreate-C5PXcoLD.js",
     "name": "DesignCreate",
     "src": "resources/js/views/Designs/DesignCreate.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_BaseTextarea-Cr1bfkXz.js"
+      "_BaseTextarea-9y2mXUvE.js"
     ],
     "css": [
       "assets/DesignCreate-CzcDgIeJ.css",
@@ -102,7 +102,7 @@
     ]
   },
   "resources/js/views/Designs/DesignDetail.vue": {
-    "file": "assets/DesignDetail-CbysjmNJ.js",
+    "file": "assets/DesignDetail-CkO4ewBB.js",
     "name": "DesignDetail",
     "src": "resources/js/views/Designs/DesignDetail.vue",
     "isDynamicEntry": true,
@@ -115,7 +115,7 @@
     ]
   },
   "resources/js/views/Designs/DesignList.vue": {
-    "file": "assets/DesignList-CGeUQX1I.js",
+    "file": "assets/DesignList-Bpt3AhXo.js",
     "name": "DesignList",
     "src": "resources/js/views/Designs/DesignList.vue",
     "isDynamicEntry": true,
@@ -128,7 +128,7 @@
     ]
   },
   "resources/js/views/Messages.vue": {
-    "file": "assets/Messages-Cw2d0Vrq.js",
+    "file": "assets/Messages-B22bgIjs.js",
     "name": "Messages",
     "src": "resources/js/views/Messages.vue",
     "isDynamicEntry": true,
@@ -141,7 +141,7 @@
     ]
   },
   "resources/js/views/Orders/TechPackGenerator.vue": {
-    "file": "assets/TechPackGenerator-3ySoJK21.js",
+    "file": "assets/TechPackGenerator-Dn8Es1C1.js",
     "name": "TechPackGenerator",
     "src": "resources/js/views/Orders/TechPackGenerator.vue",
     "isDynamicEntry": true,
@@ -155,7 +155,7 @@
     ]
   },
   "resources/js/views/Products/ProductList.vue": {
-    "file": "assets/ProductList-C2lSaF09.js",
+    "file": "assets/ProductList-IvgNjEBI.js",
     "name": "ProductList",
     "src": "resources/js/views/Products/ProductList.vue",
     "isDynamicEntry": true,
@@ -163,12 +163,12 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/ProductList-eqU_SZKN.css",
+      "assets/ProductList-BHZdzarQ.css",
       "assets/app-BItLc-sP.css"
     ]
   },
   "resources/js/views/Profile.vue": {
-    "file": "assets/Profile-9T1BoiFB.js",
+    "file": "assets/Profile-DFpGBRln.js",
     "name": "Profile",
     "src": "resources/js/views/Profile.vue",
     "isDynamicEntry": true,
@@ -181,7 +181,7 @@
     ]
   },
   "resources/js/views/Settings/Fits.vue": {
-    "file": "assets/Fits-Aj_Z_wnO.js",
+    "file": "assets/Fits-Dr5-Er8y.js",
     "name": "Fits",
     "src": "resources/js/views/Settings/Fits.vue",
     "isDynamicEntry": true,
@@ -194,7 +194,7 @@
     ]
   },
   "resources/js/views/Settings/ItemTypes.vue": {
-    "file": "assets/ItemTypes-BduloHka.js",
+    "file": "assets/ItemTypes-CPaE9NlZ.js",
     "name": "ItemTypes",
     "src": "resources/js/views/Settings/ItemTypes.vue",
     "isDynamicEntry": true,
@@ -207,7 +207,7 @@
     ]
   },
   "resources/js/views/Settings/LandingPageCms.vue": {
-    "file": "assets/LandingPageCms-DanPiKla.js",
+    "file": "assets/LandingPageCms-DoTi7vxH.js",
     "name": "LandingPageCms",
     "src": "resources/js/views/Settings/LandingPageCms.vue",
     "isDynamicEntry": true,
@@ -220,7 +220,7 @@
     ]
   },
   "resources/js/views/Settings/PermissionsMatrix.vue": {
-    "file": "assets/PermissionsMatrix-Cd7P9nn6.js",
+    "file": "assets/PermissionsMatrix-BQmsD02V.js",
     "name": "PermissionsMatrix",
     "src": "resources/js/views/Settings/PermissionsMatrix.vue",
     "isDynamicEntry": true,
@@ -228,18 +228,18 @@
       "resources/js/app.js"
     ],
     "css": [
-      "assets/PermissionsMatrix-ULDqQPIq.css",
+      "assets/PermissionsMatrix-DclXsrVG.css",
       "assets/app-BItLc-sP.css"
     ]
   },
   "resources/js/views/Settings/Roles.vue": {
-    "file": "assets/Roles-BF7xWLLF.js",
+    "file": "assets/Roles-D2h4jzOK.js",
     "name": "Roles",
     "src": "resources/js/views/Settings/Roles.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_BaseTextarea-Cr1bfkXz.js"
+      "_BaseTextarea-9y2mXUvE.js"
     ],
     "css": [
       "assets/Roles-DPmv3MJ1.css",
@@ -247,7 +247,7 @@
     ]
   },
   "resources/js/views/Settings/Settings.vue": {
-    "file": "assets/Settings-BnA3B8-h.js",
+    "file": "assets/Settings-Db8FSr9u.js",
     "name": "Settings",
     "src": "resources/js/views/Settings/Settings.vue",
     "isDynamicEntry": true,
@@ -260,7 +260,7 @@
     ]
   },
   "resources/js/views/Users/UserList.vue": {
-    "file": "assets/UserList-0Sixhn-8.js",
+    "file": "assets/UserList-yx0rAPkx.js",
     "name": "UserList",
     "src": "resources/js/views/Users/UserList.vue",
     "isDynamicEntry": true,

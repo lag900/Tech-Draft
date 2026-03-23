@@ -142,8 +142,47 @@ class OrderTechPackService
             return $order->orderMeasurements->map(fn($m) => [
                 'point' => $m->point_of_measure,
                 'value' => $m->dimension_value,
-                'tol' => $m->tolerance ?? '0.5 cm'
+                'tol' => $m->tolerance ?? '0.5 cm',
+                'grading' => is_array($m->grading) ? $m->grading : []
             ])->toArray();
+        }
+
+        // Fallback for JSON column 'measurements'
+        if (!empty($order->measurements) && is_array($order->measurements)) {
+            // Format 1: Array of objects (from OrderWizard)
+            if (isset($order->measurements[0]) && is_array($order->measurements[0])) {
+                return array_map(function($m) use ($order) {
+                    return [
+                        'point' => $m['point'] ?? $m['point_of_measure'] ?? '',
+                        'value' => $m['value'] ?? $m['dimension_value'] ?? 0,
+                        'tol' => $m['tolerance'] ?? $order->measurement_tolerance ?? '0.5 cm',
+                        'grading' => is_array($m['grading'] ?? null) ? $m['grading'] : []
+                    ];
+                }, $order->measurements);
+            }
+
+            // Format 2: Flat key-value map (from OrderCreate fallback) e.g. "Chest_S" => 50
+            $parsed = [];
+            foreach ($order->measurements as $key => $val) {
+                if (is_string($key) && str_contains($key, '_')) {
+                    $parts = explode('_', $key);
+                    $size = array_pop($parts);
+                    $point = implode('_', $parts);
+                    
+                    if (!isset($parsed[$point])) {
+                        $parsed[$point] = [
+                            'point' => $point,
+                            'value' => $val, 
+                            'tol' => $order->measurement_tolerance ?? '0.5 cm',
+                            'grading' => []
+                        ];
+                    }
+                    $parsed[$point]['grading'][$size] = $val;
+                }
+            }
+            if (!empty($parsed)) {
+                return array_values($parsed);
+            }
         }
 
         return [];

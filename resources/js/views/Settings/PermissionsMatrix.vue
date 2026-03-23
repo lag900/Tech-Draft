@@ -149,7 +149,6 @@
             <div class="module-header-right">
               <!-- Grant All Toggle -->
               <button
-                v-if="selectedRole !== 'superadmin'"
                 class="grant-all-btn"
                 :class="{ active: isAllGranted(module.key) }"
                 :title="t('Toggle all', 'تبديل الكل')"
@@ -184,14 +183,14 @@
               class="perm-pill"
               :class="{
                 granted: isChecked(selectedRole, module.key, action.key),
-                disabled: selectedRole === 'superadmin' || !isActionAllowed(action),
+                disabled: !isActionAllowed(action),
                 locked: !isActionAllowed(action),
               }"
             >
               <input
                 type="checkbox"
                 :checked="isChecked(selectedRole, module.key, action.key)"
-                :disabled="selectedRole === 'superadmin' || !isActionAllowed(action)"
+                :disabled="!isActionAllowed(action)"
                 @change="toggleCheck(selectedRole, module.key, action.key)"
               />
               <div class="perm-pill-inner">
@@ -285,7 +284,7 @@
   import { useLang } from '../../composables/useLang';
   import Layout from '../../components/Layout.vue';
   import BaseButton from '../../components/UI/BaseButton.vue';
-  import { ROLES, ROLE_INFO, hasPermission, refreshUserPermissions } from '../../utils/permissions';
+  import { ROLE_INFO, hasPermission, refreshUserPermissions } from '../../utils/permissions';
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import axios from 'axios';
@@ -449,8 +448,8 @@
   };
 
   const isActionAllowed = (action) => {
-    if (selectedRole.value === 'superadmin') return true;
-    return getSelectedRoleLevel() >= (action.level || 10);
+    // Allow admins to assign any permission to any role, removing the restrictive UX lock
+    return true;
   };
 
   const getLevelBadge = (level) => {
@@ -463,13 +462,11 @@
 
   /* ─── Permission helpers ─── */
   const isChecked = (roleSlug, module, action) => {
-    if (roleSlug === ROLES.SUPER_ADMIN) return true;
     const perm = `${module}.${action}`;
     return (localMatrix.value[roleSlug] || []).includes(perm);
   };
 
   const toggleCheck = (roleSlug, module, action) => {
-    if (roleSlug === ROLES.SUPER_ADMIN) return;
     const perm = `${module}.${action}`;
     const current = [...(localMatrix.value[roleSlug] || [])];
     const idx = current.indexOf(perm);
@@ -489,7 +486,7 @@
 
   const toggleGrantAll = (moduleKey) => {
     const module = moduleDefinitions.find((m) => m.key === moduleKey);
-    if (!module || selectedRole.value === ROLES.SUPER_ADMIN) return;
+    if (!module) return;
     const allGranted = isAllGranted(moduleKey);
     const current = [...(localMatrix.value[selectedRole.value] || [])];
     module.actions.forEach((a) => {
@@ -506,12 +503,10 @@
   const getGrantedCount = (moduleKey) => {
     const module = moduleDefinitions.find((m) => m.key === moduleKey);
     if (!module) return 0;
-    if (selectedRole.value === ROLES.SUPER_ADMIN) return module.actions.length;
     return module.actions.filter((a) => isChecked(selectedRole.value, moduleKey, a.key)).length;
   };
 
   const getRolePermCount = (roleSlug) => {
-    if (roleSlug === ROLES.SUPER_ADMIN) return '∞';
     return (localMatrix.value[roleSlug] || []).length;
   };
 
